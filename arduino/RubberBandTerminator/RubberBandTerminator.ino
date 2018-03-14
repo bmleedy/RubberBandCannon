@@ -1,14 +1,26 @@
 /*
- Controlling a servo position using a potentiometer (variable resistor)
- by Michal Rinott <http://people.interaction-ivrea.it/m.rinott>
+RubberBandTerminator.ino
 
- modified on 8 Nov 2013
- by Scott Fitzgerald
- http://www.arduino.cc/en/Tutorial/Knob
+The sole intention of this project is to shoot things with rubber bands using the coolest technology possible. 
+
+Ideas: 
+    * 3d print a base to attach servo to stepper motor
+    * rename variables for the elevation
+    * Add a camera for targeting
+    * Try to do auto-targeting with camera image
+    * Setup control via wifi
+    * Setup display website
+    * Setup a website to control the gun
 */
 
 #include <Servo.h>
+#include <avr/wdt.h>  //http://www.nongnu.org/avr-libc/user-manual/modules.html 
+#include "Stepper.h"
 #include "IRremote.h"
+
+
+#define SERIAL_BAUD_RATE 57600
+#define USE_WATCHDOG_TIMER
 
 Servo base;  // create servo object to control a servo
 Servo hammer;
@@ -23,12 +35,22 @@ decode_results results;   // IR receiver results
 #define FIRE_HAMMER_POSITION 150 //degrees
 #define HAMMER_PIN 3             //must be a PWM pin
 
-#define BASE_CENTER_POSITION 90 //degrees
-#define BASE_MOVEMENT_RANGE  90 //base can move plus or minus this many degrees
+//base, now elevation for now
+#define BASE_CENTER_POSITION 120 //degrees
+#define BASE_MOVEMENT_RANGE  30 //base can move plus or minus this many degrees
 #define BASE_PIN 5 //must be a PWM pin
 #define BASE_POSITION_INCREMENT 5 //degrees
 int base_command_position = BASE_CENTER_POSITION;
 
+/*----- Variables, Pins -----*/
+#define STEPS  32   // Number of steps per revolution of Internal shaft
+int  Steps2Take;    // 2048 = 1 Revolution
+
+/*-----( Declare objects )-----*/
+// Setup of proper sequencing for Motor Driver Pins
+// In1, In2, In3, In4 in the sequence 1-3-2-4
+
+Stepper small_stepper(STEPS, 8, 9, 10, 7);
 
 
 
@@ -39,7 +61,7 @@ void fire() {
   hammer.write(ARMED_HAMMER_POSITION);  //ready to load again
 }
 
-void turn_right() {
+void turn_up() {
   //move in positive direction
   base_command_position = base_command_position + BASE_POSITION_INCREMENT;
   if(base_command_position > (BASE_CENTER_POSITION + BASE_MOVEMENT_RANGE) )
@@ -48,13 +70,25 @@ void turn_right() {
   base.write(base_command_position);
 }
 
-void turn_left() {
+void turn_down() {
   //move in positive direction
   base_command_position = base_command_position - BASE_POSITION_INCREMENT;
   if(base_command_position < (BASE_CENTER_POSITION - BASE_MOVEMENT_RANGE) )
     base_command_position = (BASE_CENTER_POSITION - BASE_MOVEMENT_RANGE);
 
   base.write(base_command_position);
+}
+
+void turn_right(){
+  small_stepper.setSpeed(500); //Max seems to be 500
+  small_stepper.step(30);// Rotate CW about 5 degrees (30 steps)
+  delay(500); 
+}
+
+void turn_left(){
+  small_stepper.setSpeed(500); //Max seems to be 500
+  small_stepper.step(-30);// Rotate CCW about 5 degrees (30 steps)
+  delay(500); 
 }
 
 /*
@@ -85,8 +119,12 @@ void translateIR(decode_results results) // takes action based on IR code receiv
                  turn_right();
                  break;
   case 0xFFE01F: Serial.println("EQ");    break;
-  case 0xFFA857: Serial.println("VOL-");      break;
-  case 0xFF906F: Serial.println("VOL+");       break;
+  case 0xFFA857: Serial.println("VOL-");
+                 turn_down();
+                 break;
+  case 0xFF906F: Serial.println("VOL+");
+                 turn_up();
+                 break;
   case 0xFF9867: Serial.println("RETURN");    break;
   case 0xFFB04F: Serial.println("USB SCAN");    break;
   case 0xFF6897: Serial.println("0");
@@ -120,7 +158,7 @@ void translateIR(decode_results results) // takes action based on IR code receiv
 
 void setup() {
   // Setup the debug serial port
-  Serial.begin(9600);
+  Serial.begin(SERIAL_BAUD_RATE);
 
     // Enable IR Remote Control Input
   irrecv.enableIRIn(); // Start the receiver
@@ -131,11 +169,20 @@ void setup() {
   hammer.attach(HAMMER_PIN);
   hammer.write(ARMED_HAMMER_POSITION);
 
+#ifdef USE_WATCHDOG_TIMER
+  wdt_enable(WDTO_8S);  // all code must execute in less than 8s.
+#endif
+
+
   Serial.println("Setup complete.  Running...");
 }
 
 
 void loop() {
+  
+#ifdef USE_WATCHDOG_TIMER
+  wdt_reset();  //reset the countdown of the watchdog.
+#endif
 
   // Check for remote control commands
   if (irrecv.decode(&results)) // have we received an IR signal?
@@ -147,19 +194,7 @@ void loop() {
   {
     delay(100);  //chill out for a sec
   }
-  /*
-  base.write(45);                  // z-down positive sets the servo position according to the scaled value
-  hammer.write(35);    //+ toward back
-  delay(10000);                           // waits for the servo to get there
-    
-  base.write(90);                  // sets the servo position according to the scaled value
-  delay(1000);       //wait for base to get there
-  hammer.write(150);
-  delay(10000);                           // waits for the servo to get there
 
-  base.write(135);                  // sets the servo position according to the scaled value
 
-  delay(10000);                           // waits for the servo to get there
-*/
 }
 
