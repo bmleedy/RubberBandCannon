@@ -187,11 +187,19 @@ void ESP8266::send_output_queue(unsigned char channel){
     //while we can retrieve things from the tou
     while(output_queue.get_element(&data_to_write)){
       port->write(data_to_write.pointer,data_to_write.string_length);
+      delay(20);  //from Espressif ICD
     }
 
     // TODO: This is still pretty brittle.  Repeat the cipclose command 
     //until I get some kind of response, either success or failure from 
     //the ESP.
+    
+    // Send the command to terminate the data stream, 
+    //   even though it should have been terminated based on length.
+    port->write("+++",3);
+
+    // Wait 1 second before sending any other command, per the Espressif ICD
+    delay(1000); //wait 1 second, per the 
     
     // Now close the connection  // todo: make less stringy
     write_command = String(String("AT+CIPCLOSE=")+
