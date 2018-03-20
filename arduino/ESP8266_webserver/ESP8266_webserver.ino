@@ -126,7 +126,7 @@ void loop() {
   if(esp->check_for_request(F("GET"))){
     Serial.println(F("got a request!!!"));
     esp->send_http_200(0,helloworld_page());
-    esp->send_http_200_static(0,static_website_text,sizeof(static_website_text));
+    esp->send_http_200_static(0,(char*)static_website_text,sizeof(static_website_text));
   }
 
 ///check_for_request here

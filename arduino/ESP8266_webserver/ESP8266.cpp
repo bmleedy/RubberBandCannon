@@ -296,7 +296,7 @@ void ESP8266::send_http_200_static(unsigned char channel, char page_data[], unsi
     int total_page_size = 0;
 
     // Save the HTTP header from PROGMEM into the output buffer
-    const char header[] PROGMEM = "HTTP/1.1 200 OK\r\n\r\n";
+    char header[] PROGMEM = "HTTP/1.1 200 OK\r\n\r\n";
     this->output_queue.add_element(header,19);
     //todo: add Content_Length header so I don't have to close the connection. Or, maybe I want to close the connection anyway.
     // https://www.w3.org/Protocols/HTTP/Response.html
@@ -307,6 +307,36 @@ void ESP8266::send_http_200_static(unsigned char channel, char page_data[], unsi
     // Send!
     this->send_output_queue(channel);
 }
+
+
+
+/*-----------------------------------------------------------------
+ * OutputQueue
+ * 
+ * Holds pointers to strings, their sizes, and a tally of the sizes
+ * of all of the strings that need to be outputted.
+ * 
+ * This is a huge space saver compared to keeping an output buffer 
+ * in dynamic memory, where it may topple your heap.  It's only 
+ * dynamic memory usage is the compact array of pointers to strings 
+ * and string lengths.
+ * 
+ * //todo: rather than an array, a linked list could be prepended,
+ *        which would be nice.
+ *        
+ * Usage:
+ *    char string1[10] = "1234567890";
+ *    char string2[3]  = "321";
+ *    OutputQueue myqueue;
+ *    myqueue.add_element(string1,sizeof(string1);
+ *    myqueue.add_element(string2,sizeof(string2);
+ *    //...etc, etc, up to max number of elements.
+ *    string_element output;
+ *    while(myqueue.get_element(&output)){
+ *      my_method_to_use_the_output_strings(output);
+ *    }
+ *-----------------------------------------------------------------
+ */
 
 OutputQueue::OutputQueue(){
   this->clear_elements();

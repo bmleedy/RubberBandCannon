@@ -26,7 +26,7 @@
 // pointers and lengths for static or progmem strings to be sent
 struct string_element{
   char * pointer;         //this should be ptr to a static char. Dynamic data may mutate before use.
-  unsigned char string_length;
+  unsigned int string_length;
 };
 
 // 
