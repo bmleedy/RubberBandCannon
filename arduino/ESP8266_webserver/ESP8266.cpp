@@ -10,6 +10,52 @@
  You then interact with it's public methods to use the server:
   * Check_for_requests(bool verbose) - reads one line from the SoftwareSerial
     port and returns TRUE if a line contains a string specified by the caller.
+
+//todo: replace String to reduce heap fragmentation
+You #include <string.h> to use those functions. All the names are shorthand, you get to know them.
+
+Some easy basics you can do most simple things with:
+strlen() is string length
+strcpy() is string copy, it puts the terminating zero at the end of the copy. It is string = string.
+strstr() is string string, it searches for a substring within a string
+strcmp() string compare tells you if one string is >, ==, or less than another, good for sorting
+strcat() string concatenation, adds one string to the end of another
+
+You will some with an n in the middle. The n tells you that character count is used.
+
+strncpy() is strcpy for up to n characters and does NOT put a zero at the end.
+strncpy is perfect for writing over part of a string with another, in BASIC it is mid$()
+
+Not simple but very useful is strtok(), string token, that you can use to parse strings with.
+
+Also don't forget the mem (memory) functions, the 2 most basic:
+memset(), to set some number of bytes equal to a given value
+memmove(), copies bytes and **is safe to use when the destination overlaps the source** 
+
+Measure free memory: https://learn.adafruit.com/memories-of-an-arduino/measuring-free-memory 
+
+
+Put website into flash memory as a string: 
+
+const char *text =
+  "This text is pretty long, but will be "
+  "concatenated into just a single string. "
+  "The disadvantage is that you have to quote "
+  "each part, and newlines must be literal as "
+  "usual.";
+
+The indentation doesn't matter, since it's not inside the quotes.
+
+You can also do this, as long as you take care to escape the embedded newline. Failure to do so, like my first answer did, will not compile:
+
+const char *text2 =
+  "Here, on the other hand, I've gone crazy \
+and really let the literal span several lines, \
+without bothering with quoting each line's \
+content. This works, but you can't indent.";
+
+
+
  
 */
 #include "ESP8266.h"
@@ -166,6 +212,8 @@ bool ESP8266::setup_device(){
     }
 }
 
+
+//DEPRECATED: todo: deleteme (too stringy, space-inefficient.)
 void ESP8266::send_data(unsigned char channel, String write_data){
     
     // Command the esp to listen for n bytes of data
@@ -193,7 +241,39 @@ void ESP8266::send_data(unsigned char channel, String write_data){
     //https://www.youtube.com/watch?v=ETLDW22zoMA&t=9s
 }
 
+
+//Send the contents of my output queue to a specific channel
+void ESP8266::send_output_queue(unsigned char channel){
+    
+    // Command the esp to listen for n bytes of data  // todo: make less stringy
+    String write_command = String(String("AT+CIPSEND=")+//todo: see if I can use the append method
+                                  String(channel)+
+                                  String(",")+
+                                  String(output_queue.get_total_size())+
+                                  String("\r\n"));//todo: make this less stringy.  Ok for now, since they're pretty short and all local variables.
+
+    string_element data_to_write;
+
+    //while we can retrieve things from the tou
+    while(output_queue.get_element(&data_to_write)){
+      port->write(data_to_write.pointer,data_to_write.string_length);
+    }
+    
+    // Now close the connection  // todo: make less stringy
+    write_command = String(String("AT+CIPCLOSE=")+
+                           String(channel)+
+                           String("\r\n"));
+    // todo: validate that these commands actually worked.  Right now they're open loop.
+    port->write(write_command.c_str());
+    //https://www.youtube.com/watch?v=ETLDW22zoMA&t=9s
+}
+
+
+
+//DEPRECATED todo: deletme (too stringy)
 void ESP8266::send_http_200(unsigned char channel, String page_data){
+
+  //todo: delete this method, if I can.
     String content = "HTTP/1.1 200 OK\r\n\r\n";
     
     //todo: maybe don't use string (not sure what happens under there) in favor of a fixed-size char[] response buffer.
@@ -210,3 +290,63 @@ void ESP8266::send_http_200(unsigned char channel, String page_data){
     Serial.println(content);
     this->send_data(channel, content);
 }
+
+void ESP8266::send_http_200_static(unsigned char channel, char page_data[], unsigned int page_data_len){
+
+    int total_page_size = 0;
+
+    // Save the HTTP header from PROGMEM into the output buffer
+    const char header[] PROGMEM = "HTTP/1.1 200 OK\r\n\r\n";
+    this->output_queue.add_element(header,19);
+    //todo: add Content_Length header so I don't have to close the connection. Or, maybe I want to close the connection anyway.
+    // https://www.w3.org/Protocols/HTTP/Response.html
+
+    // Now enqueue the website page data
+    this->output_queue.add_element(page_data,page_data_len);
+    
+    // Send!
+    this->send_output_queue(channel);
+}
+
+OutputQueue::OutputQueue(){
+  this->clear_elements();
+}
+
+// Add an element to this queue.
+void OutputQueue::add_element(char * string, unsigned char string_len){
+  if(queue_len >= MAX_OUTPUT_QUEUE_LENGTH){
+    Serial.println(F("| OutputQueue::add_element: Max output queue length exceeded! Check your code!"));
+  }else if(read_position != 0){
+    Serial.println(F("| OutputQueue::add_element: Cannot add elements to an output queue that's partially read!"));
+  }else{
+    queue[queue_len].pointer = string;
+    queue[queue_len].string_length = string_len;
+    total_size += string_len;  //tally up size of referenced strings
+    queue_len++;
+  }
+}
+
+// Clear the queue and the read position at the same time
+void OutputQueue::clear_elements(){
+  //no need to actually erase the data, just reset list position
+  queue_len = 0;
+  read_position = 0;
+  total_size = 0;
+}
+
+//returns false if none are available.
+//resets the queue and returns false when there is nothing left to read
+bool OutputQueue::get_element(string_element * output){
+  if(read_position >= queue_len){
+    //nothing to read
+    this->clear_elements();
+    return false;
+  } else {
+    *output = queue[read_position];
+  }
+}
+
+unsigned int OutputQueue::get_total_size(){
+  return this->total_size;
+}
+

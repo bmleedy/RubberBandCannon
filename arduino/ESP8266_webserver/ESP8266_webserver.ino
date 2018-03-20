@@ -27,6 +27,18 @@
  * Use AT+UART_DEF=57600,8,1,0,0 to switch to 57600
  * Use AT+CWMODE_DEF=
  *  
+ *  
+ *  https://hackingmajenkoblog.wordpress.com/2016/02/04/the-evils-of-arduino-strings/ 
+
+ Note:
+ Not all pins on the Mega and Mega 2560 support change interrupts,
+ so only the following can be used for RX:
+ 10, 11, 12, 13, 50, 51, 52, 53, 62, 63, 64, 65, 66, 67, 68, 69
+
+ Not all pins on the Leonardo and Micro support change interrupts,
+ so only the following can be used for RX:
+ 8, 9, 10, 11, 14 (MISO), 15 (SCK), 16 (MOSI).
+
  */
 
 #define PRINT_SERIAL_STREAM true
@@ -35,10 +47,20 @@
 
 int last_output_time = 0;
 
-struct web_page {
-  String content;
-  unsigned char channel;
-}rv;
+const char static_website_text[] PROGMEM =
+"<!DOCTYPE html>\r\n \
+<html>\r\n \
+  <head>\r\n \
+    <title>Brett's IOT Device</title>\r\n \
+  </head>\r\n \
+  <body>\r\n \
+    <h1>Hello, fine world.</h1>\r\n \
+      <p>I am Brett. :-)</p>\r\n \
+    <h1>Arduino Stats.</h1>\r\n \
+      <p>todo: put some stats in here.</p>\r\n \
+  </body>\r\n \
+</html>\r\n";
+
 
 String helloworld_page(){  //todo: fix to pass pointer to rv instead
 
@@ -50,6 +72,8 @@ String helloworld_page(){  //todo: fix to pass pointer to rv instead
   // Just give it a super-simple html structure
   // todo: make this an encapsulating class
   String content = "";
+
+ 
   content.concat(String(F("<!DOCTYPE html>\r\n")));
   content.concat(String(F("<html>\r\n")));
   content.concat(String(F("<head>\r\n")));
@@ -67,25 +91,11 @@ String helloworld_page(){  //todo: fix to pass pointer to rv instead
 }
 
 
-/*
- Note:
- Not all pins on the Mega and Mega 2560 support change interrupts,
- so only the following can be used for RX:
- 10, 11, 12, 13, 50, 51, 52, 53, 62, 63, 64, 65, 66, 67, 68, 69
-
- Not all pins on the Leonardo and Micro support change interrupts,
- so only the following can be used for RX:
- 8, 9, 10, 11, 14 (MISO), 15 (SCK), 16 (MOSI).
-*/
 //softPort(TX,RX)
 SoftwareSerial softPort(8,9);
 ESP8266 * esp;
 
 void setup() {
-
-
-  
-  
   // Setup the debug serial port
   Serial.begin(SERIAL_BAUD_RATE);
   while (!Serial) {
@@ -111,12 +121,12 @@ void setup() {
 
 void loop() {
   char latest_byte = ' ';
-  web_page output_page;
   // put your main code here, to run repeatedly:
 
-  if(esp->check_for_request("GET")){
-    Serial.println("got a request!!!");
+  if(esp->check_for_request(F("GET"))){
+    Serial.println(F("got a request!!!"));
     esp->send_http_200(0,helloworld_page());
+    esp->send_http_200_static(0,static_website_text,sizeof(static_website_text));
   }
 
 ///check_for_request here
