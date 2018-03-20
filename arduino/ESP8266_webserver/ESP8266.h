@@ -1,35 +1,49 @@
 #ifndef ESP8266_H
 #define ESP8266_H
-/*
- ESP8266
- 
- This class is an ESP8266 for the purposes of my IOT work.  On creation,
- it will set the device to:
-  * Only act as a client of an access point, not an access point itself
-  * Connect to the house access point
-  * Serve a multi-connection TCP server on port 8080
- 
- You then interact with it's public methods to use the server:
-  * Check_for_requests(bool verbose) - reads one line from the SoftwareSerial
-    port and returns TRUE if a line contains a string specified by the caller.
- 
-*/
-#include <SoftwareSerial.h>
 
+#include <SoftwareSerial.h>
 #include <Arduino.h>
 #include "HardwareSerial.h"
 
-//
-#define SERIAL_INPUT_BUFFER_MAX_SIZE 200
-#define MAX_OUTPUT_QUEUE_LENGTH  10  //number of pointers to strings I'll store
 
-// pointers and lengths for static or progmem strings to be sent
+#define SERIAL_INPUT_BUFFER_MAX_SIZE 200  //maximum line length that I can handle
+#define MAX_OUTPUT_QUEUE_LENGTH  20       //number of pointers to strings I'll store
+
+
+/*-----------------------------------------------------------------
+ * OutputQueue
+ * 
+ * Holds pointers to strings, their sizes, and a tally of the sizes
+ * of all of the strings that need to be outputted.
+ * 
+ * This is a huge space saver compared to keeping an output buffer 
+ * in dynamic memory, where it may topple your heap.  It's only 
+ * dynamic memory usage is the compact array of pointers to strings 
+ * and string lengths.
+ * 
+ * //todo: rather than an array, a linked list could be prepended,
+ *        which would be nice.
+ *        
+ * Usage:
+ *    char string1[10] = "1234567890";
+ *    char string2[3]  = "321";
+ *    OutputQueue myqueue;
+ *    myqueue.add_element(string1,sizeof(string1);
+ *    myqueue.add_element(string2,sizeof(string2);
+ *    //...etc, etc, up to max number of elements.
+ *    string_element output;
+ *    while(myqueue.get_element(&output)){
+ *      my_method_to_use_the_output_strings(output);
+ *    }
+ *-----------------------------------------------------------------
+ */
+// Datatype for the output queue
 struct string_element{
   char * pointer;         //this should be ptr to a static char. Dynamic data may mutate before use.
   unsigned int string_length;
 };
 
-// 
+
 class OutputQueue{
   private:
   string_element queue[MAX_OUTPUT_QUEUE_LENGTH];
@@ -48,18 +62,36 @@ class OutputQueue{
 };
 
 
+/*---------------------------------------------------------------
+ * ESP8266
+ *
+ * This class is an ESP8266 for the purposes of my IOT work.  On creation,
+ * it will set the device to:
+ *  * Only act as a client of an access point, not an access point itself
+ *  * Connect to the house access point
+ *  * Serve a multi-connection TCP server on port 8080
+ *
+ * USAGE:
+ *   ESP8266 * myesp;
+ *   myesp = new ESP8266(&serial_port, verbose_flag);
+ *   while(1){
+ *     if(myesp->check_for_request(F("GET"))){
+ *       Serial.println(F("got a request!!!"));
+ *       myesp->send_http_200_static(0,(char*)static_website_text,
+ *                                   sizeof(static_website_text));
+ *}
+ ---------------------------------------------------------------*/
 
 class ESP8266{
 private:
-    SoftwareSerial *port;
-    String serial_input_buffer;  //todo replace with char ring buffer
-    bool verbose;
-    OutputQueue output_queue;
+    SoftwareSerial *port;       //Initialized outside of this class
+    String serial_input_buffer; //todo: Replace with char ring buffer
+    bool verbose;               
+    OutputQueue output_queue;   //Does not hold data, just pointers to data
     
 public:
     ESP8266(SoftwareSerial *port, bool verbose);
     bool check_for_request(String matchtext);
-    void send_http_200(unsigned char channel,String page_data);//deprecated
     void send_http_200_static(unsigned char channel,char page_data[],unsigned int page_data_len);
     
     

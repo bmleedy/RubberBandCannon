@@ -1,67 +1,22 @@
-/*
- ESP8266
- 
- This class is an ESP8266 for the purposes of my IOT work.  On creation,
- it will set the device to:
-  * Only act as a client of an access point, not an access point itself
-  * Connect to the house access point
-  * Serve a multi-connection TCP server on port 8080
- 
- You then interact with it's public methods to use the server:
-  * Check_for_requests(bool verbose) - reads one line from the SoftwareSerial
-    port and returns TRUE if a line contains a string specified by the caller.
-
-//todo: replace String to reduce heap fragmentation
-You #include <string.h> to use those functions. All the names are shorthand, you get to know them.
-
-Some easy basics you can do most simple things with:
-strlen() is string length
-strcpy() is string copy, it puts the terminating zero at the end of the copy. It is string = string.
-strstr() is string string, it searches for a substring within a string
-strcmp() string compare tells you if one string is >, ==, or less than another, good for sorting
-strcat() string concatenation, adds one string to the end of another
-
-You will some with an n in the middle. The n tells you that character count is used.
-
-strncpy() is strcpy for up to n characters and does NOT put a zero at the end.
-strncpy is perfect for writing over part of a string with another, in BASIC it is mid$()
-
-Not simple but very useful is strtok(), string token, that you can use to parse strings with.
-
-Also don't forget the mem (memory) functions, the 2 most basic:
-memset(), to set some number of bytes equal to a given value
-memmove(), copies bytes and **is safe to use when the destination overlaps the source** 
-
-Measure free memory: https://learn.adafruit.com/memories-of-an-arduino/measuring-free-memory 
-
-
-Put website into flash memory as a string: 
-
-const char *text =
-  "This text is pretty long, but will be "
-  "concatenated into just a single string. "
-  "The disadvantage is that you have to quote "
-  "each part, and newlines must be literal as "
-  "usual.";
-
-The indentation doesn't matter, since it's not inside the quotes.
-
-You can also do this, as long as you take care to escape the embedded newline. Failure to do so, like my first answer did, will not compile:
-
-const char *text2 =
-  "Here, on the other hand, I've gone crazy \
-and really let the literal span several lines, \
-without bothering with quoting each line's \
-content. This works, but you can't indent.";
-
-
-
- 
-*/
+/*------------------------------------------------------------------------------
+ * ESP8266
+ *  
+ * This class is an ESP8266 for the purposes of my IOT work.  On creation,
+ * it will set the device to:
+ *  * Only act as a client of an access point, not an access point itself
+ *  * Connect to the house access point
+ *  * Serve a multi-connection TCP server on port 8080
+ * 
+ * You then interact with it's public methods to use the server:
+ *  * Check_for_requests(bool verbose) - reads one line from the SoftwareSerial
+ *    port and returns TRUE if a line contains a string specified by the caller.
+ * 
+ * TODO: 
+ *   * replace all String class instances to reduce heap fragmentation 
+ ------------------------------------------------------------------------------*/
 #include "ESP8266.h"
 
-
-
+// Constructor: SoftwareSerial port must be initialized
 ESP8266::ESP8266(SoftwareSerial *port, bool verbose){
     this->port = port;
     serial_input_buffer.reserve(SERIAL_INPUT_BUFFER_MAX_SIZE);
@@ -69,14 +24,15 @@ ESP8266::ESP8266(SoftwareSerial *port, bool verbose){
     this->verbose = verbose;
 }
 
-//todo: implement a get_line method to put the next line in the input buffer
 
+// check_for_request: read a line from the port and respond whether it matches a pattern.
 bool ESP8266::check_for_request(String matchtext){
     char latest_byte = '\0';
     while (this->port->available()) {
         latest_byte = this->port->read();
         if(verbose){Serial.write(latest_byte);}
         //Need to replace this with a proper ring buffer or long lines could crash me. :-O //todo//
+        // todo: de-stringify.
         serial_input_buffer = String(serial_input_buffer + String(latest_byte)); //todo: probably really inefficient
         if(serial_input_buffer.indexOf("\n") != -1) {
             if(serial_input_buffer.indexOf(matchtext) != -1){
@@ -87,11 +43,11 @@ bool ESP8266::check_for_request(String matchtext){
             else{
                 return false;
             }
-            
         }
     }
 }
 
+// Send a command and expect a string in response
 bool ESP8266::expect_response_to_command(String command,
                                 String response,
                                 unsigned int timeout_ms){
@@ -121,6 +77,7 @@ bool ESP8266::expect_response_to_command(String command,
     return false;
 }
 
+// Send a command and print the response
 bool ESP8266::print_response_to_command(String command,
                                unsigned int timeout_ms){
     String input_buffer = "";
@@ -149,6 +106,8 @@ bool ESP8266::print_response_to_command(String command,
     return false;
 }
 
+
+// Setup the ESP8266 as a webserver
 bool ESP8266::setup_device(){
     // Get a response from anyone
     Serial.print(F("ESP8266 - Waiting for a response from the Wifi Device..."));
@@ -213,35 +172,6 @@ bool ESP8266::setup_device(){
 }
 
 
-//DEPRECATED: todo: deleteme (too stringy, space-inefficient.)
-void ESP8266::send_data(unsigned char channel, String write_data){
-    
-    // Command the esp to listen for n bytes of data
-    String write_command = String(String("AT+CIPSEND=")+//todo: see if I can use the append method
-                                  String(channel)+
-                                  String(",")+
-                                  String(write_data.length())+
-                                  String("\r\n"));//todo: figure out if I need to do all the string conversions.
-    Serial.println("--------------------------");
-    Serial.println(write_data);
-    Serial.println("--------------------------");
-    Serial.println(write_command);
-    Serial.println("--------------------------");
-    port->write(write_command.c_str());
-    delay(20);
-    // Now write the data
-    port->write(write_data.c_str());
-    delay(20);
-    // Now close the connection
-    write_command = String(String("AT+CIPCLOSE=")+
-                           String(channel)+
-                           String("\r\n"));
-    // todo: validate that these commands actually worked.  Right now they're open loop.
-    port->write(write_command.c_str());
-    //https://www.youtube.com/watch?v=ETLDW22zoMA&t=9s
-}
-
-
 //Send the contents of my output queue to a specific channel
 void ESP8266::send_output_queue(unsigned char channel){
     
@@ -258,6 +188,10 @@ void ESP8266::send_output_queue(unsigned char channel){
     while(output_queue.get_element(&data_to_write)){
       port->write(data_to_write.pointer,data_to_write.string_length);
     }
+
+    // TODO: This is still pretty brittle.  Repeat the cipclose command 
+    //until I get some kind of response, either success or failure from 
+    //the ESP.
     
     // Now close the connection  // todo: make less stringy
     write_command = String(String("AT+CIPCLOSE=")+
@@ -269,28 +203,7 @@ void ESP8266::send_output_queue(unsigned char channel){
 }
 
 
-
-//DEPRECATED todo: deletme (too stringy)
-void ESP8266::send_http_200(unsigned char channel, String page_data){
-
-  //todo: delete this method, if I can.
-    String content = "HTTP/1.1 200 OK\r\n\r\n";
-    
-    //todo: maybe don't use string (not sure what happens under there) in favor of a fixed-size char[] response buffer.
-    
-    //todo: add Content_Length header so I don't have to close the connection. Or, maybe I want to close the connection anyway.
-    // https://www.w3.org/Protocols/HTTP/Response.html
-    
-    Serial.println("--------------------------");
-    Serial.println(content);
-    
-    content = String(content + page_data); //content is not propagating here - out of memory //bml - left off here.
-    
-    Serial.println("--------------------------");
-    Serial.println(content);
-    this->send_data(channel, content);
-}
-
+// Send a static website as an HTTP 200 response
 void ESP8266::send_http_200_static(unsigned char channel, char page_data[], unsigned int page_data_len){
 
     int total_page_size = 0;
@@ -316,25 +229,7 @@ void ESP8266::send_http_200_static(unsigned char channel, char page_data[], unsi
  * Holds pointers to strings, their sizes, and a tally of the sizes
  * of all of the strings that need to be outputted.
  * 
- * This is a huge space saver compared to keeping an output buffer 
- * in dynamic memory, where it may topple your heap.  It's only 
- * dynamic memory usage is the compact array of pointers to strings 
- * and string lengths.
- * 
- * //todo: rather than an array, a linked list could be prepended,
- *        which would be nice.
- *        
- * Usage:
- *    char string1[10] = "1234567890";
- *    char string2[3]  = "321";
- *    OutputQueue myqueue;
- *    myqueue.add_element(string1,sizeof(string1);
- *    myqueue.add_element(string2,sizeof(string2);
- *    //...etc, etc, up to max number of elements.
- *    string_element output;
- *    while(myqueue.get_element(&output)){
- *      my_method_to_use_the_output_strings(output);
- *    }
+ * (see header file for usage)
  *-----------------------------------------------------------------
  */
 
@@ -376,6 +271,7 @@ bool OutputQueue::get_element(string_element * output){
   }
 }
 
+// Returns the sum of the lengths of the enqueued strings
 unsigned int OutputQueue::get_total_size(){
   return this->total_size;
 }

@@ -87,8 +87,10 @@ void setup() {
 void loop() {
   // Read a line (delimited by '\n') from the ESP8266
   if(esp->check_for_request(F("GET"))){
-    Serial.println(F("got a request!!!"));
+    Serial.println(F("\n| Got a request!!!"));
+    Serial.print(F("|   Free Memory: "));Serial.println(mu_freeRam());
     esp->send_http_200_static(0,(char*)static_website_text,sizeof(static_website_text));
+    Serial.print(F("\n|   Response complete. Free Memory: "));Serial.println(mu_freeRam());
   }
 
   // Read any data from the serial port and output it to the esp8266 port
