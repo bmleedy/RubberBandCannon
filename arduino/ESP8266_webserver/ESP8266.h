@@ -106,6 +106,32 @@ private:
     void send_output_queue(unsigned char channel);
 };
 
+/*-----------------------------------------------------------------
+ * CircularBuffer
+ * 
+ * Simple ring buffer to handle serial output that we want to scan for string matches.
+ * 
+ *-----------------------------------------------------------------
+ */
 
+class CircularBuffer{
+private:
+  char buf[SERIAL_INPUT_BUFFER_MAX_SIZE];
+  unsigned int head;
+  unsigned int tail;
+  unsigned int buf_size; //of the buffer
+
+  CircularBuffer();
+  
+public:
+  void buf_reset();
+  bool buf_put(char data);
+  int buf_put_multiple(char data, unsigned int n);//not yet implemented
+  bool buf_get(char * data);
+  int buf_get_multiple(char * destination, unsigned int n);//not yet implemented
+  bool is_empty();
+  bool is_full();
+  
+};
 
 #endif

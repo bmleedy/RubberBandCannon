@@ -284,3 +284,71 @@ unsigned int OutputQueue::get_total_size(){
   return this->total_size;
 }
 
+
+
+
+/*-----------------------------------------------------------------
+ * CircularBuffer
+ * 
+ * Simple ring buffer to handle serial output that we want to scan for string matches.
+ * 
+ * (see header file for usage)
+ *-----------------------------------------------------------------
+ */
+
+// Constructor just clears the buffer
+CircularBuffer::CircularBuffer(){
+  this->buf_reset();
+  this->buf_size = SERIAL_INPUT_BUFFER_MAX_SIZE;
+}
+
+
+// Clear the buffer
+void CircularBuffer::buf_reset(){
+    this->head = 0;
+    this->tail = 0;
+}
+
+//returns false if we overflowed and lost data.
+bool CircularBuffer::buf_put(char data){
+  bool rv;
+  buf[head] = data;
+  head = (head + 1) % buf_size;
+
+  if(head == tail)
+  {
+      tail = (tail + 1) % buf_size;
+      rv = false;
+  }
+  return rv;
+}
+int CircularBuffer::buf_put_multiple(char data, unsigned int n){} //todo: implement me
+
+//returns true if the buffer had a value to get
+bool CircularBuffer::buf_get(char * data){
+    bool r = false;
+
+    if(data && !this->is_empty())
+    {
+        *data = this->buf[tail];
+        tail = (tail + 1) % buf_size;
+
+        r = true;
+    }
+
+    return r;
+}
+
+//returns the number of values gotten, up to n
+int CircularBuffer::buf_get_multiple(char * destination, unsigned int n){}//todo: implement me
+
+//returns true if the buffer's empty
+bool CircularBuffer::is_empty(){
+  return (head == tail);
+}
+
+//returns true if the buffer's full
+bool CircularBuffer::is_full(){
+  return ((head + 1) % buf_size) == tail;
+}
+
