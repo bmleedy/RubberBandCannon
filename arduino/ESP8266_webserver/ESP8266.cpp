@@ -47,6 +47,7 @@ bool ESP8266::check_for_request(String matchtext){
     }
 }
 
+
 // Send a command and expect a string in response
 bool ESP8266::expect_response_to_command(String command,
                                 String response,
@@ -76,6 +77,7 @@ bool ESP8266::expect_response_to_command(String command,
     }//while(millis...)
     return false;
 }
+
 
 // Send a command and print the response
 bool ESP8266::print_response_to_command(String command,
@@ -181,22 +183,34 @@ void ESP8266::send_output_queue(unsigned char channel){
                                   String(",")+
                                   String(output_queue.get_total_size())+
                                   String("\r\n"));//todo: make this less stringy.  Ok for now, since they're pretty short and all local variables.
+    port->write(write_command.c_str());
+    delay(20);
+/*
+    char char_response_line[] = "HTTP/1.1 200 OK\r\n\r\n";
+    String response_line = String(F("HTTP/1.1 200 OK\r\n\r\n"));
+    Serial.println(sizeof(char_response_line));
+    Serial.println(response_line.length());
+    //port->write(response_line.c_str(),response_line.length());
+    port->write(char_response_line,(sizeof(char_response_line)-1));
+*/
 
     string_element data_to_write;
-
-    //while we can retrieve things from the tou
+    Serial.print("Total amount of data: ");Serial.println(output_queue.get_total_size());
+    //while we can retrieve things from the output queue
     while(output_queue.get_element(&data_to_write)){
+      Serial.print("\n Length to send: "); Serial.println(data_to_write.string_length);
+      Serial.print(" Data to send:  [");Serial.write(data_to_write.pointer,data_to_write.string_length);Serial.write("]\n");
       port->write(data_to_write.pointer,data_to_write.string_length);
-      delay(20);  //from Espressif ICD
+      //delay(20);  //from Espressif ICD
     }
-
+    Serial.println("Done Sending!!!");
     // TODO: This is still pretty brittle.  Repeat the cipclose command 
     //until I get some kind of response, either success or failure from 
     //the ESP.
     
     // Send the command to terminate the data stream, 
     //   even though it should have been terminated based on length.
-    port->write("+++",3);
+    //port->write("+++",3);
 
     // Wait 1 second before sending any other command, per the Espressif ICD
     delay(1000); //wait 1 second, per the 
@@ -217,13 +231,19 @@ void ESP8266::send_http_200_static(unsigned char channel, char page_data[], unsi
     int total_page_size = 0;
 
     // Save the HTTP header from PROGMEM into the output buffer
-    char header[] PROGMEM = "HTTP/1.1 200 OK\r\n\r\n";
-    this->output_queue.add_element(header,19);
+    // todo: re-add the header here
+    //const char header[] PROGMEM = "/ HTTP/1.1 200 OK\r\n\r\nhello!";
+    //const char header[] PROGMEM = "hello";
+    //this->output_queue.add_element((char*)header, sizeof(header)-1);  //don't add \0 at end of string
     //todo: add Content_Length header so I don't have to close the connection. Or, maybe I want to close the connection anyway.
     // https://www.w3.org/Protocols/HTTP/Response.html
 
+    static const char header[] = "HTTP/1.1 200 OK\r\n\r\n";
+    this->output_queue.add_element((char*)header, (sizeof(header)-1));
+    
     // Now enqueue the website page data
-    this->output_queue.add_element(page_data,page_data_len);
+    Serial.print("Adding an element with size: ");Serial.println(page_data_len);
+    this->output_queue.add_element(page_data, page_data_len);
     
     // Send!
     this->send_output_queue(channel);
@@ -245,8 +265,9 @@ OutputQueue::OutputQueue(){
   this->clear_elements();
 }
 
+
 // Add an element to this queue.
-void OutputQueue::add_element(char * string, unsigned char string_len){
+void OutputQueue::add_element(char * string, unsigned int string_len){
   if(queue_len >= MAX_OUTPUT_QUEUE_LENGTH){
     Serial.println(F("| OutputQueue::add_element: Max output queue length exceeded! Check your code!"));
   }else if(read_position != 0){
@@ -259,6 +280,7 @@ void OutputQueue::add_element(char * string, unsigned char string_len){
   }
 }
 
+
 // Clear the queue and the read position at the same time
 void OutputQueue::clear_elements(){
   //no need to actually erase the data, just reset list position
@@ -266,6 +288,7 @@ void OutputQueue::clear_elements(){
   read_position = 0;
   total_size = 0;
 }
+
 
 //returns false if none are available.
 //resets the queue and returns false when there is nothing left to read
@@ -276,15 +299,16 @@ bool OutputQueue::get_element(string_element * output){
     return false;
   } else {
     *output = queue[read_position];
+    read_position++;
   }
+  return true;
 }
+
 
 // Returns the sum of the lengths of the enqueued strings
 unsigned int OutputQueue::get_total_size(){
   return this->total_size;
 }
-
-
 
 
 /*-----------------------------------------------------------------
@@ -309,6 +333,7 @@ void CircularBuffer::buf_reset(){
     this->tail = 0;
 }
 
+
 //returns false if we overflowed and lost data.
 bool CircularBuffer::buf_put(char data){
   bool rv;
@@ -322,7 +347,10 @@ bool CircularBuffer::buf_put(char data){
   }
   return rv;
 }
+
+
 int CircularBuffer::buf_put_multiple(char data, unsigned int n){} //todo: implement me
+
 
 //returns true if the buffer had a value to get
 bool CircularBuffer::buf_get(char * data){
@@ -339,13 +367,16 @@ bool CircularBuffer::buf_get(char * data){
     return r;
 }
 
+
 //returns the number of values gotten, up to n
 int CircularBuffer::buf_get_multiple(char * destination, unsigned int n){}//todo: implement me
+
 
 //returns true if the buffer's empty
 bool CircularBuffer::is_empty(){
   return (head == tail);
 }
+
 
 //returns true if the buffer's full
 bool CircularBuffer::is_full(){

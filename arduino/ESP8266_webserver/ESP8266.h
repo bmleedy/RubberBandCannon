@@ -4,7 +4,7 @@
 #include <SoftwareSerial.h>
 #include <Arduino.h>
 #include "HardwareSerial.h"
-
+#include "webserver_constants.h"
 
 #define SERIAL_INPUT_BUFFER_MAX_SIZE 200  //maximum line length that I can handle
 #define MAX_OUTPUT_QUEUE_LENGTH  20       //number of pointers to strings I'll store
@@ -47,13 +47,13 @@ struct string_element{
 class OutputQueue{
   private:
   string_element queue[MAX_OUTPUT_QUEUE_LENGTH];
-  unsigned char queue_len;
+  unsigned int queue_len;
   int read_position;
   unsigned int total_size;
 
   public:
   OutputQueue();
-  void add_element(char * string, unsigned char string_len);
+  void add_element(char * string, unsigned int string_len);
   //reset queue position and length. Automatic when you get the last element.
   void clear_elements();
   //gets the element

@@ -27,6 +27,7 @@
 #include <SoftwareSerial.h>
 #include <MemoryUsage.h>
 #include "ESP8266.h"
+#include "webserver_constants.h"
 
 
 #define DEBUG_MEMORY true
@@ -34,19 +35,10 @@
 //// Serial Port Definitions
 #define PRINT_SERIAL_STREAM true
 #define SERIAL_BAUD_RATE 57600
-const char static_website_text[] PROGMEM =
-"<!DOCTYPE html>\r\n \
-<html>\r\n \
-  <head>\r\n \
-    <title>Brett's IOT Device</title>\r\n \
-  </head>\r\n \
-  <body>\r\n \
-    <h1>Hello, fine world.</h1>\r\n \
-      <p>I am Brett. :-)</p>\r\n \
-    <h1>Arduino Stats.</h1>\r\n \
-      <p>todo: put some stats in here.</p>\r\n \
-  </body>\r\n \
-</html>\r\n";
+
+//todo: can't create a pointer to flash memory, so need a way to access flash mem at specific addresses.
+const static char static_website_text[] = "\n<html><head><title>Brett's IOT Device</title></head><body><h1>Hello, fine world.</h1><p>I am Brett. :-)</p><h1>Arduino Stats.</h1><p>todo: put some stats in here.</p></body></html>";
+
 SoftwareSerial softPort(8,9); //TX,RX
 
 
@@ -73,11 +65,16 @@ void setup() {
   Serial.println(F("| Initializing ESP8266..."));
   esp = new ESP8266(&softPort, PRINT_SERIAL_STREAM);
   Serial.print(F("|   Done. Free Memory: "));Serial.println(mu_freeRam());
+
+  Serial.print("STATIC WEBSITE DATA:\n[");
+  Serial.write(static_website_text,sizeof(static_website_text)-1);
+  Serial.println("]");
   
   if(PRINT_SERIAL_STREAM)
     Serial.println(F("\n\nENTERING INTERACTIVE SERIAL PASSTHROUGH-------------------"));
   else
     Serial.println(F("\n\nREADY TO RECEIVE COMMANDS, BUT NOT ECHOING WIFI DATA------"));
+
 }
 
 
@@ -85,6 +82,8 @@ void setup() {
  * LOOP
  *-------------------------------------------------------------*/
 void loop() {
+
+  
   // Read a line (delimited by '\n') from the ESP8266
   if(esp->check_for_request(F("GET"))){
     Serial.println(F("\n| Got a request!!!"));
