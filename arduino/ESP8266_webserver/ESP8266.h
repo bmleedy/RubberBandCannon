@@ -37,10 +37,12 @@
  *    }
  *-----------------------------------------------------------------
  */
+ 
 // Datatype for the output queue
 struct string_element{
   char * pointer;         //this should be ptr to a static char. Dynamic data may mutate before use.
   unsigned int string_length;
+  bool is_progmem;
 };
 
 
@@ -53,7 +55,7 @@ class OutputQueue{
 
   public:
   OutputQueue();
-  void add_element(char * string, unsigned int string_len);
+  void add_element(char * string, unsigned int string_len, bool is_progmem);
   //reset queue position and length. Automatic when you get the last element.
   void clear_elements();
   //gets the element
@@ -86,6 +88,7 @@ class ESP8266{
 private:
     SoftwareSerial *port;       //Initialized outside of this class
     String serial_input_buffer; //todo: Replace with char ring buffer
+    String read_line_buffer;    //todo: Replace with char ring buffer
     bool verbose;               
     OutputQueue output_queue;   //Does not hold data, just pointers to data
     
@@ -93,7 +96,8 @@ public:
     ESP8266(SoftwareSerial *port, bool verbose);
     bool check_for_request(String matchtext);
     void send_http_200_static(unsigned char channel,char page_data[],unsigned int page_data_len);
-    
+    bool read_line(String * line_buffer, int * line_length);
+    void clear_buffer();
     
 private:
     bool expect_response_to_command(String command,

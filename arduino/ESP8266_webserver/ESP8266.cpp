@@ -18,94 +18,113 @@
 
 // Constructor: SoftwareSerial port must be initialized
 ESP8266::ESP8266(SoftwareSerial *port, bool verbose){
-    this->port = port;
-    serial_input_buffer.reserve(SERIAL_INPUT_BUFFER_MAX_SIZE);
-    this->setup_device();
-    this->verbose = verbose;
+  this->port = port;
+  serial_input_buffer.reserve(SERIAL_INPUT_BUFFER_MAX_SIZE);
+  this->setup_device();
+  this->verbose = verbose;
 }
 
 
 // check_for_request: read a line from the port and respond whether it matches a pattern.
 bool ESP8266::check_for_request(String matchtext){
-    char latest_byte = '\0';
-    while (this->port->available()) {
-        latest_byte = this->port->read();
-        if(verbose){Serial.write(latest_byte);}
-        //Need to replace this with a proper ring buffer or long lines could crash me. :-O //todo//
-        // todo: de-stringify.
-        serial_input_buffer = String(serial_input_buffer + String(latest_byte)); //todo: probably really inefficient
-        if(serial_input_buffer.indexOf("\n") != -1) {
-            if(serial_input_buffer.indexOf(matchtext) != -1){
-                //render_page_for_channel(0,&softPort); //todo deleteme
-                this->serial_input_buffer = "";  //todo: leave the input buffer alone instead of clearing it.
-                return true;
-            }
-            else{
-                return false;
-            }
-        }
+  char latest_byte = '\0';
+  while (this->port->available()) {
+    latest_byte = this->port->read();
+    if(verbose){Serial.write(latest_byte);}
+    //Need to replace this with a proper ring buffer or long lines could crash me. :-O //todo//
+    // todo: de-stringify.
+    serial_input_buffer = String(serial_input_buffer + String(latest_byte)); //todo: probably really inefficient
+    if(serial_input_buffer.indexOf("\n") != -1) {
+      if(serial_input_buffer.indexOf(matchtext) != -1){
+        //render_page_for_channel(0,&softPort); //todo deleteme
+        this->serial_input_buffer = "";  //todo: leave the input buffer alone instead of clearing it.
+        return true;
+      }
+      else{
+        return false;
+      }
     }
+  }
 }
 
+// check_for_request: read a line from the port and respond whether it matches a pattern.
+bool ESP8266::read_line(String * line_buffer, int * line_length){
+  char latest_byte = '\0';
+  while (this->port->available()) {
+    latest_byte = this->port->read();
+    if(verbose){Serial.write(latest_byte);}
+    //Need to replace this with a proper ring buffer or long lines could crash me. :-O //todo//
+    // todo: de-stringify.
+    *line_buffer = String(*line_buffer + String(latest_byte)); //todo: probably really inefficient
+    if(line_buffer->indexOf("\n") != -1) {
+      //Serial.println("Line Received!!!!!!!");
+      Serial.print("Line:   '");Serial.print(*line_buffer);Serial.println("'");
+      //return true if we found a newline
+      return true;
+    }
+  }
+  return false;
+}
+
+void ESP8266::clear_buffer(){
+  serial_input_buffer = String("");
+}
 
 // Send a command and expect a string in response
 bool ESP8266::expect_response_to_command(String command,
                                 String response,
                                 unsigned int timeout_ms){
-    String input_buffer = "";
-    input_buffer.reserve(100);
+  String input_buffer = "";
+  input_buffer.reserve(100);
+
+  // Write the command
+  this->port->write(String(command + "\r\n").c_str());
+  if(this->verbose){Serial.println(String(">>>" + command));}
   
-    // Write the command
-    this->port->write(String(command + "\r\n").c_str());
-    if(this->verbose){Serial.println(String(">>>" + command));}
+  // Spin for timeout_ms
+  unsigned int start_time = millis();
+  char rv = -1;
+  while((millis() - start_time) < timeout_ms){
     
-    // Spin for timeout_ms
-    unsigned int start_time = millis();
-    char rv = -1;
-    while((millis() - start_time) < timeout_ms){
-        
-        // Read 1 char off the serial port.
-        rv = this->port->read();
-        if (rv != -1) {
-            if(this->verbose){Serial.write(rv);}
-            input_buffer = String(input_buffer + String(rv));
-            if(input_buffer.indexOf(response) != -1) {
-                return true;
-            }
-        }//if(rv != 1)
-        
-    }//while(millis...)
-    return false;
+    // Read 1 char off the serial port.
+    rv = this->port->read();
+    if (rv != -1) {
+      if(this->verbose){Serial.write(rv);}
+      input_buffer = String(input_buffer + String(rv));
+      if(input_buffer.indexOf(response) != -1) {
+        return true;
+      }
+    }//if(rv != 1)
+  }//while(millis...)
+  return false;
 }
 
 
 // Send a command and print the response
 bool ESP8266::print_response_to_command(String command,
                                unsigned int timeout_ms){
-    String input_buffer = "";
-    input_buffer.reserve(100);
-    
-    // Write the command
-    this->port->write(String(command + "\r\n").c_str());
-    if(this->verbose){Serial.println(String(">>>" + command));}
-    
-    // Spin for timeout_ms
-    unsigned int start_time = millis();
-    char rv = -1;
-    while((millis() - start_time) < timeout_ms){
-        
-        // Read 1 char off the serial port.
-        rv = this->port->read();
-        if (rv != -1) {
-            Serial.write(rv);
-            input_buffer = String(input_buffer + String(rv));
-            if(input_buffer.indexOf("\r\n\r\nOK") != -1) {
-                return true;
-            }
-        }//if(rv != 1)
-        
-    }//while(millis...)
-    return false;
+  String input_buffer = "";
+  input_buffer.reserve(100);
+  
+  // Write the command
+  this->port->write(String(command + "\r\n").c_str());
+  if(this->verbose){Serial.println(String(">>>" + command));}
+  
+  // Spin for timeout_ms
+  unsigned int start_time = millis();
+  char rv = -1;
+  while((millis() - start_time) < timeout_ms){
+      // Read 1 char off the serial port.
+      rv = this->port->read();
+      if (rv != -1) {
+          Serial.write(rv);
+          input_buffer = String(input_buffer + String(rv));
+          if(input_buffer.indexOf("\r\n\r\nOK") != -1) {
+              return true;
+          }
+      }//if(rv != 1)
+  }//while(millis...)
+  return false;
 }
 
 
@@ -178,29 +197,24 @@ bool ESP8266::setup_device(){
 void ESP8266::send_output_queue(unsigned char channel){
     
     // Command the esp to listen for n bytes of data  // todo: make less stringy
-    String write_command = String(String("AT+CIPSEND=")+//todo: see if I can use the append method
+    String write_command = String(String("AT+CIPSEND=")+
                                   String(channel)+
                                   String(",")+
                                   String(output_queue.get_total_size())+
-                                  String("\r\n"));//todo: make this less stringy.  Ok for now, since they're pretty short and all local variables.
+                                  String("\r\n"));//todo: make this less stringy.
     port->write(write_command.c_str());
     delay(20);
-/*
-    char char_response_line[] = "HTTP/1.1 200 OK\r\n\r\n";
-    String response_line = String(F("HTTP/1.1 200 OK\r\n\r\n"));
-    Serial.println(sizeof(char_response_line));
-    Serial.println(response_line.length());
-    //port->write(response_line.c_str(),response_line.length());
-    port->write(char_response_line,(sizeof(char_response_line)-1));
-*/
 
     string_element data_to_write;
-    Serial.print("Total amount of data: ");Serial.println(output_queue.get_total_size());
     //while we can retrieve things from the output queue
     while(output_queue.get_element(&data_to_write)){
-      Serial.print("\n Length to send: "); Serial.println(data_to_write.string_length);
-      Serial.print(" Data to send:  [");Serial.write(data_to_write.pointer,data_to_write.string_length);Serial.write("]\n");
-      port->write(data_to_write.pointer,data_to_write.string_length);
+      if(data_to_write.is_progmem){
+        for(int i=0;i<data_to_write.string_length;i++){
+          port->write(pgm_read_byte(data_to_write.pointer + i));
+        }
+      }else{
+        port->write(data_to_write.pointer,data_to_write.string_length);
+      }
       //delay(20);  //from Espressif ICD
     }
     Serial.println("Done Sending!!!");
@@ -210,10 +224,10 @@ void ESP8266::send_output_queue(unsigned char channel){
     
     // Send the command to terminate the data stream, 
     //   even though it should have been terminated based on length.
-    //port->write("+++",3);
+    port->write("+++",3);
 
-    // Wait 1 second before sending any other command, per the Espressif ICD
-    delay(1000); //wait 1 second, per the 
+    // Wait 100 ms before sending any other command, per the Espressif ICD
+    delay(100); 
     
     // Now close the connection  // todo: make less stringy
     write_command = String(String("AT+CIPCLOSE=")+
@@ -228,25 +242,20 @@ void ESP8266::send_output_queue(unsigned char channel){
 // Send a static website as an HTTP 200 response
 void ESP8266::send_http_200_static(unsigned char channel, char page_data[], unsigned int page_data_len){
 
-    int total_page_size = 0;
+  int total_page_size = 0;
 
-    // Save the HTTP header from PROGMEM into the output buffer
-    // todo: re-add the header here
-    //const char header[] PROGMEM = "/ HTTP/1.1 200 OK\r\n\r\nhello!";
-    //const char header[] PROGMEM = "hello";
-    //this->output_queue.add_element((char*)header, sizeof(header)-1);  //don't add \0 at end of string
-    //todo: add Content_Length header so I don't have to close the connection. Or, maybe I want to close the connection anyway.
-    // https://www.w3.org/Protocols/HTTP/Response.html
+  //todo: add Content_Length header so I don't have to close the connection. 
+  //      Or, maybe I want to close the connection anyway.
+  // https://www.w3.org/Protocols/HTTP/Response.html
 
-    static const char header[] = "HTTP/1.1 200 OK\r\n\r\n";
-    this->output_queue.add_element((char*)header, (sizeof(header)-1));
-    
-    // Now enqueue the website page data
-    Serial.print("Adding an element with size: ");Serial.println(page_data_len);
-    this->output_queue.add_element(page_data, page_data_len);
-    
-    // Send!
-    this->send_output_queue(channel);
+  // start-line per https://tools.ietf.org/html/rfc2616#page-31 
+  this->output_queue.add_element((char *)http_200_start_line, HTTP_200_START_LINE_LEN, true);
+
+  // Now enqueue the website page data
+  this->output_queue.add_element(page_data, page_data_len,true);
+  
+  // Send!
+  this->send_output_queue(channel);
 }
 
 
@@ -267,7 +276,7 @@ OutputQueue::OutputQueue(){
 
 
 // Add an element to this queue.
-void OutputQueue::add_element(char * string, unsigned int string_len){
+void OutputQueue::add_element(char * string, unsigned int string_len, bool is_progmem){
   if(queue_len >= MAX_OUTPUT_QUEUE_LENGTH){
     Serial.println(F("| OutputQueue::add_element: Max output queue length exceeded! Check your code!"));
   }else if(read_position != 0){
@@ -275,6 +284,7 @@ void OutputQueue::add_element(char * string, unsigned int string_len){
   }else{
     queue[queue_len].pointer = string;
     queue[queue_len].string_length = string_len;
+    queue[queue_len].is_progmem = is_progmem;
     total_size += string_len;  //tally up size of referenced strings
     queue_len++;
   }

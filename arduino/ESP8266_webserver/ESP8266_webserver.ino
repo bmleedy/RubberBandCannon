@@ -33,18 +33,14 @@
 #define DEBUG_MEMORY true
 
 //// Serial Port Definitions
-#define PRINT_SERIAL_STREAM true
+#define PRINT_SERIAL_STREAM false
 #define SERIAL_BAUD_RATE 57600
-
-//todo: can't create a pointer to flash memory, so need a way to access flash mem at specific addresses.
-const static char static_website_text[] = "\n<html><head><title>Brett's IOT Device</title></head><body><h1>Hello, fine world.</h1><p>I am Brett. :-)</p><h1>Arduino Stats.</h1><p>todo: put some stats in here.</p></body></html>";
 
 SoftwareSerial softPort(8,9); //TX,RX
 
-
 //// ESP8266 Definitions
 ESP8266 * esp;
-
+String * input_line;
 
 /*---------------------------------------------------------------
  * SETUP
@@ -75,23 +71,56 @@ void setup() {
   else
     Serial.println(F("\n\nREADY TO RECEIVE COMMANDS, BUT NOT ECHOING WIFI DATA------"));
 
+  input_line = new String();
+
 }
 
 
 /*---------------------------------------------------------------
  * LOOP
  *-------------------------------------------------------------*/
+
+
+int input_line_length;
 void loop() {
 
   
   // Read a line (delimited by '\n') from the ESP8266
-  if(esp->check_for_request(F("GET"))){
-    Serial.println(F("\n| Got a request!!!"));
-    Serial.print(F("|   Free Memory: "));Serial.println(mu_freeRam());
-    esp->send_http_200_static(0,(char*)static_website_text,sizeof(static_website_text));
-    Serial.print(F("\n|   Response complete. Free Memory: "));Serial.println(mu_freeRam());
+  if(esp->read_line(input_line, &input_line_length)){
+    //Serial.println(F("| Got a line!!!"));
+    Serial.print(F("|  Received Line:   '"));Serial.print(*input_line);Serial.println("'");
+    Serial.print(F("|    Free Memory: "));Serial.println(mu_freeRam());
+    //Serial.print("Input Line length:  ");Serial.println(input_line->length());
+    if(input_line->indexOf(F("GET")) != -1){
+      //Serial.print(F("|   Free Memory: "));Serial.println(mu_freeRam());
+      esp->send_http_200_static(0,(char *)static_website_text,sizeof(static_website_text));
+      Serial.println(F("|  GET received"));
+    }else if(input_line->indexOf(F("POST")) != -1){
+      Serial.print(F("|  POST received : "));
+      if(input_line->indexOf(F("tilt_up")) != -1){
+        Serial.println(F("tilt_up"));
+      } else if(input_line->indexOf(F("tilt_down")) != -1){
+        Serial.println(F("tilt_down"));
+      } else if(input_line->indexOf(F("pan_right")) != -1){
+        Serial.println(F("pan_right"));
+      } else if(input_line->indexOf(F("pan_left")) != -1){
+        Serial.println(F("pan_left"));
+      } else {
+        Serial.println(F("OTHER"));
+      }
+      esp->send_http_200_static(0,(char *)static_website_text,sizeof(static_website_text));
+    }
+    *input_line = "";
   }
 
+  /*
+  if(esp->check_for_request(F("GET"))){
+    Serial.println(F("| Got a request!!!"));
+    Serial.print(F("|   Free Memory: "));Serial.println(mu_freeRam());
+    esp->send_http_200_static(0,(char *)static_website_text,sizeof(static_website_text));
+    Serial.print(F("|   Response complete. Free Memory: "));Serial.println(mu_freeRam());
+  }
+*/
   // Read any data from the serial port and output it to the esp8266 port
   // (this is for manual commands, etc.)
   while(Serial.available()) {
