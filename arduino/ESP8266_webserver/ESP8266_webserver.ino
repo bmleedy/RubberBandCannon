@@ -28,7 +28,7 @@
 #include <MemoryUsage.h>
 #include "ESP8266.h"
 #include "webserver_constants.h"
-
+#include "rubber_band_shooter.h"
 
 #define DEBUG_MEMORY true
 
@@ -41,6 +41,8 @@ SoftwareSerial softPort(8,9); //TX,RX
 //// ESP8266 Definitions
 ESP8266 * esp;
 String * input_line;
+
+Rubber_Band_Shooter * shooter;
 
 /*---------------------------------------------------------------
  * SETUP
@@ -65,6 +67,8 @@ void setup() {
   Serial.print("STATIC WEBSITE DATA:\n[");
   Serial.write(static_website_text,sizeof(static_website_text)-1);
   Serial.println("]");
+
+  shooter = new Rubber_Band_Shooter();
   
   if(PRINT_SERIAL_STREAM)
     Serial.println(F("\n\nENTERING INTERACTIVE SERIAL PASSTHROUGH-------------------"));
@@ -99,13 +103,20 @@ void loop() {
       Serial.print(F("|  POST received : "));
       if(input_line->indexOf(F("tilt_up")) != -1){
         Serial.println(F("tilt_up"));
+        shooter->turn_up();
       } else if(input_line->indexOf(F("tilt_down")) != -1){
         Serial.println(F("tilt_down"));
+        shooter->turn_down();
       } else if(input_line->indexOf(F("pan_right")) != -1){
         Serial.println(F("pan_right"));
+        shooter->turn_right();
       } else if(input_line->indexOf(F("pan_left")) != -1){
         Serial.println(F("pan_left"));
-      } else {
+        shooter->turn_left();
+      } else if(input_line->indexOf(F("fire")) != -1){
+        Serial.println(F("FIIIIRRRRRREEEE!!!!!!!!!!!!!!"));
+        shooter->fire();
+      }else {
         Serial.println(F("OTHER"));
       }
       esp->send_http_200_static(0,(char *)static_website_text,sizeof(static_website_text));

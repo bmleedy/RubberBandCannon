@@ -1,26 +1,20 @@
 /*
-//  webserver_constants.h
-    http://www.nongnu.org/avr-libc/user-manual/group__avr__pgmspace.html
-    https://playground.arduino.cc/Main/PROGMEM
-    
-//  
-//
-//  Created by Leedy, Brett on 3/21/18.
+*   webserver_constants.h
+*   
+*   This file contains static content for the website, all stored in PROGMEM
+*   
 */
+   
+
 
 #ifndef webserver_constants_h
 #define webserver_constants_h
-
-#include "webserver_constants.h"
-
-
-
 
 // https://tools.ietf.org/html/rfc2616#page-31
 const char http_200_start_line[] PROGMEM = "HTTP/1.1 200 OK\r\n\r\n";
 #define HTTP_200_START_LINE_LEN 19
 
-
+//  http://www.nongnu.org/avr-libc/user-manual/group__avr__pgmspace.html
 const char static_website_text[] PROGMEM = "<!DOCTYPE html>\
 <html>\
   <head><title>Brett's IOT Device</title></head>\
@@ -54,9 +48,12 @@ const char static_website_text[] PROGMEM = "<!DOCTYPE html>\
            <td><form action=\"tilt_down\" method=\"post\">\
              <button type=\"submit\">Down</button>\
            </form></td>\
-           <td></td>\
+           <td><form action=\"fire\" method=\"post\">\
+             <button type=\"submit\">FIRE</button>\
+           </form></td>\
          </tr>\
        </table>\
   </body>\
 </html>";
+
 #endif /* webserver_constants_h */
