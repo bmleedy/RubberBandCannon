@@ -1,12 +1,13 @@
 #ifndef ESP8266_H
 #define ESP8266_H
 
-#include <SoftwareSerial.h>
+//#include <SoftwareSerial.h>
+#include <AltSoftSerial.h>
 #include <Arduino.h>
 #include "HardwareSerial.h"
 #include "webserver_constants.h"
 
-#define SERIAL_INPUT_BUFFER_MAX_SIZE 200  //maximum line length that I can handle
+#define SERIAL_INPUT_BUFFER_MAX_SIZE 100  //maximum line length that I can handle
 #define MAX_OUTPUT_QUEUE_LENGTH  20       //number of pointers to strings I'll store
 
 
@@ -64,6 +65,34 @@ class OutputQueue{
 };
 
 
+/*-----------------------------------------------------------------
+ * CircularBuffer
+ * 
+ * Simple ring buffer to handle serial output that we want to scan for string matches.
+ * 
+ *-----------------------------------------------------------------
+ */
+
+class CircularBuffer{
+private:
+  char buf[SERIAL_INPUT_BUFFER_MAX_SIZE];
+  unsigned int head;
+  unsigned int tail;
+  unsigned int buf_size; //of the buffer
+  
+public:
+  CircularBuffer();
+  void buf_reset();
+  bool buf_put(char data);
+  int buf_put_multiple(char data, unsigned int n);//not yet implemented
+  bool buf_get(char * data);
+  int buf_get_multiple(char * destination, unsigned int n);//not yet implemented
+  bool is_empty();
+  bool is_full();
+  void read_buffer_to_string(char string[]);
+  
+};
+
 /*---------------------------------------------------------------
  * ESP8266
  *
@@ -86,17 +115,15 @@ class OutputQueue{
 
 class ESP8266{
 private:
-    SoftwareSerial *port;       //Initialized outside of this class
-    String serial_input_buffer; //todo: Replace with char ring buffer
-    String read_line_buffer;    //todo: Replace with char ring buffer
+    AltSoftSerial *port;       //Initialized outside of this class
+    CircularBuffer * serial_input_buffer; //todo: Replace with char ring buffer
     bool verbose;               
     OutputQueue output_queue;   //Does not hold data, just pointers to data
     
 public:
-    ESP8266(SoftwareSerial *port, bool verbose);
-    bool check_for_request(String matchtext);
+    ESP8266(AltSoftSerial *port, bool verbose);
     void send_http_200_static(unsigned char channel,char page_data[],unsigned int page_data_len);
-    bool read_line(String * line_buffer, int * line_length);
+    bool read_line(char line_buffer[]);
     void clear_buffer();
     
 private:
@@ -110,32 +137,6 @@ private:
     void send_output_queue(unsigned char channel);
 };
 
-/*-----------------------------------------------------------------
- * CircularBuffer
- * 
- * Simple ring buffer to handle serial output that we want to scan for string matches.
- * 
- *-----------------------------------------------------------------
- */
 
-class CircularBuffer{
-private:
-  char buf[SERIAL_INPUT_BUFFER_MAX_SIZE];
-  unsigned int head;
-  unsigned int tail;
-  unsigned int buf_size; //of the buffer
-
-  CircularBuffer();
-  
-public:
-  void buf_reset();
-  bool buf_put(char data);
-  int buf_put_multiple(char data, unsigned int n);//not yet implemented
-  bool buf_get(char * data);
-  int buf_get_multiple(char * destination, unsigned int n);//not yet implemented
-  bool is_empty();
-  bool is_full();
-  
-};
 
 #endif

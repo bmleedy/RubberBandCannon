@@ -17,49 +17,26 @@
 #include "ESP8266.h"
 
 // Constructor: SoftwareSerial port must be initialized
-ESP8266::ESP8266(SoftwareSerial *port, bool verbose){
+ESP8266::ESP8266(AltSoftSerial *port, bool verbose){
   this->port = port;
-  serial_input_buffer.reserve(SERIAL_INPUT_BUFFER_MAX_SIZE);
+  serial_input_buffer = new CircularBuffer();  //todo: initialize size of buffer in constructor
   this->setup_device();
   this->verbose = verbose;
 }
 
-
 // check_for_request: read a line from the port and respond whether it matches a pattern.
-bool ESP8266::check_for_request(String matchtext){
+bool ESP8266::read_line(char line_buffer[]){
+  //todo: add max length to copy for buffer as an arg.
   char latest_byte = '\0';
   while (this->port->available()) {
     latest_byte = this->port->read();
-    if(verbose){Serial.write(latest_byte);}
     //Need to replace this with a proper ring buffer or long lines could crash me. :-O //todo//
     // todo: de-stringify.
-    serial_input_buffer = String(serial_input_buffer + String(latest_byte)); //todo: probably really inefficient
-    if(serial_input_buffer.indexOf("\n") != -1) {
-      if(serial_input_buffer.indexOf(matchtext) != -1){
-        //render_page_for_channel(0,&softPort); //todo deleteme
-        this->serial_input_buffer = "";  //todo: leave the input buffer alone instead of clearing it.
-        return true;
-      }
-      else{
-        return false;
-      }
-    }
-  }
-}
+    serial_input_buffer->buf_put(latest_byte);
 
-// check_for_request: read a line from the port and respond whether it matches a pattern.
-bool ESP8266::read_line(String * line_buffer, int * line_length){
-  char latest_byte = '\0';
-  while (this->port->available()) {
-    latest_byte = this->port->read();
-    if(verbose){Serial.write(latest_byte);}
-    //Need to replace this with a proper ring buffer or long lines could crash me. :-O //todo//
-    // todo: de-stringify.
-    *line_buffer = String(*line_buffer + String(latest_byte)); //todo: probably really inefficient
-    if(line_buffer->indexOf("\n") != -1) {
-      //Serial.println("Line Received!!!!!!!");
-      Serial.print("Line:   '");Serial.print(*line_buffer);Serial.println("'");
-      //return true if we found a newline
+      if(latest_byte == '\n') {
+        //    *line_buffer = String(*line_buffer + String(latest_byte)); //todo: probably really inefficient
+        serial_input_buffer->read_buffer_to_string(line_buffer);
       return true;
     }
   }
@@ -67,7 +44,7 @@ bool ESP8266::read_line(String * line_buffer, int * line_length){
 }
 
 void ESP8266::clear_buffer(){
-  serial_input_buffer = String("");
+  serial_input_buffer->buf_reset();
 }
 
 // Send a command and expect a string in response
@@ -79,7 +56,6 @@ bool ESP8266::expect_response_to_command(String command,
 
   // Write the command
   this->port->write(String(command + "\r\n").c_str());
-  if(this->verbose){Serial.println(String(">>>" + command));}
   
   // Spin for timeout_ms
   unsigned int start_time = millis();
@@ -89,7 +65,6 @@ bool ESP8266::expect_response_to_command(String command,
     // Read 1 char off the serial port.
     rv = this->port->read();
     if (rv != -1) {
-      if(this->verbose){Serial.write(rv);}
       input_buffer = String(input_buffer + String(rv));
       if(input_buffer.indexOf(response) != -1) {
         return true;
@@ -108,7 +83,6 @@ bool ESP8266::print_response_to_command(String command,
   
   // Write the command
   this->port->write(String(command + "\r\n").c_str());
-  if(this->verbose){Serial.println(String(">>>" + command));}
   
   // Spin for timeout_ms
   unsigned int start_time = millis();
@@ -117,7 +91,6 @@ bool ESP8266::print_response_to_command(String command,
       // Read 1 char off the serial port.
       rv = this->port->read();
       if (rv != -1) {
-          Serial.write(rv);
           input_buffer = String(input_buffer + String(rv));
           if(input_buffer.indexOf("\r\n\r\nOK") != -1) {
               return true;
@@ -373,7 +346,6 @@ bool CircularBuffer::buf_get(char * data){
 
         r = true;
     }
-
     return r;
 }
 
@@ -381,15 +353,22 @@ bool CircularBuffer::buf_get(char * data){
 //returns the number of values gotten, up to n
 int CircularBuffer::buf_get_multiple(char * destination, unsigned int n){}//todo: implement me
 
-
 //returns true if the buffer's empty
 bool CircularBuffer::is_empty(){
   return (head == tail);
 }
 
-
 //returns true if the buffer's full
 bool CircularBuffer::is_full(){
   return ((head + 1) % buf_size) == tail;
+}
+
+void CircularBuffer::read_buffer_to_string(char string[]){
+  int iter = 0;
+  while(!this->is_empty()){
+    this->buf_get(string+iter);
+    iter++;
+  }
+  string[iter]='\0';//todo: this assumes the target is as big as input_max_size plus one.  not safe!
 }
 

@@ -24,32 +24,30 @@ const char static_website_text[] PROGMEM = "<!DOCTYPE html>\
     <h1>Arduino Stats.</h1>\
       <p>todo: put some stats in here.</p>\
     <h1>Button Test Area</h1>\
-      <h2>The Button Element</h2>\
-        <p><button type=\"button\" onclick=\"alert('Hello world!')\">Click Me!</button></p>\
       <h2>The post button</h2>\
         <table style=\"width:100%\">\
-          <tr>\
+          <tr height=\"80\">\
             <td></td>\
             <td><form action=\"tilt_up\" method=\"post\">\
-                <button type=\"submit\">Up</button>\
+                <button style=\"width: 100%;height: 50px;\" type=\"submit\">Up</button>\
             </form></td>\
             <td></td>\
           </tr>\
           <tr>\
            <td><form action=\"pan_left\" method=\"post\">\
-             <button type=\"submit\">Left</button>\
+             <button style=\"width: 100%;height: 50px;\" type=\"submit\">Left</button>\
            </form></td>\
            <td></td>\
            <td><form action=\"pan_right\" method=\"post\">\
-             <button type=\"submit\">Right</button>\
+             <button style=\"width: 100%;height: 50px;\" type=\"submit\">Right</button>\
            </form>\</td>\
          <tr>\
            <td></td>\
            <td><form action=\"tilt_down\" method=\"post\">\
-             <button type=\"submit\">Down</button>\
+             <button style=\"width: 100%;height: 50px;\" type=\"submit\">Down</button>\
            </form></td>\
            <td><form action=\"fire\" method=\"post\">\
-             <button type=\"submit\">FIRE</button>\
+             <button style=\"width: 100%;height: 50px;\" type=\"submit\">FIRE</button>\
            </form></td>\
          </tr>\
        </table>\
