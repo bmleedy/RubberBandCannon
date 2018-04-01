@@ -14,7 +14,6 @@ const char http_200_start_line[] PROGMEM = "HTTP/1.1 200 OK\r\n\r\n";
 #define HTTP_200_START_LINE_LEN 19
 
 //  http://www.nongnu.org/avr-libc/user-manual/group__avr__pgmspace.html
-//const char static_website_text[] PROGMEM = "Simple Response";
 const char static_website_text[] PROGMEM = "<!DOCTYPE html>\
 <html>\
   <head><title>Brett's Rubber Band Cannon</title></head>\

@@ -11,8 +11,6 @@
  *  * Check_for_requests(bool verbose) - reads one line from the SoftwareSerial
  *    port and returns TRUE if a line contains a string specified by the caller.
  * 
- * TODO: 
- *   * replace all String class instances to reduce heap fragmentation 
  ------------------------------------------------------------------------------*/
 #include "ESP8266.h"
 
@@ -24,30 +22,49 @@ ESP8266::ESP8266(AltSoftSerial *port, bool verbose){
   this->verbose = verbose;
 }
 
-// check_for_request: read a line from the port and respond whether it matches a pattern.
+/* read_line() 
+ *  Read all data avalable on the serial port.  If I encounter
+ *    a '\n'  write the data from the beginning of the input buffer
+ *    up to and including the '\n' character and return TRUE.
+ *    
+ *  If I do not encounter a '\n' return FALSE and do not copy 
+ *    anything.
+ */
+
 bool ESP8266::read_line(char line_buffer[]){
   //todo: add max length to copy for buffer as an arg.
   char latest_byte = '\0';
   while (this->port->available()) {
     latest_byte = this->port->read();
-    //Need to replace this with a proper ring buffer or long lines could crash me. :-O //todo//
-    // todo: de-stringify.
+
+    // Add the byte I read to the input buffer
     serial_input_buffer->buf_put(latest_byte);
 
-      if(latest_byte == '\n') {
-        //    *line_buffer = String(*line_buffer + String(latest_byte)); //todo: probably really inefficient
-        serial_input_buffer->read_buffer_to_string(line_buffer);
+    // If I just read the end of line char, write out the line,
+    //   clearing out that buffer space.
+    if(latest_byte == '\n') {
+      serial_input_buffer->read_buffer_to_string(line_buffer);
       return true;
     }
   }
+  // No \n found.
   return false;
 }
 
+
+/* clear_buffer()
+ *  Empty the input ring buffer.
+ */
 void ESP8266::clear_buffer(){
   serial_input_buffer->buf_reset();
 }
 
-// Send a command and expect a string in response
+
+/* expect_response_to_command()
+ *  Send a command and expect a string in response.
+ *  
+ *  Used for setting up the ESP8266
+ */
 bool ESP8266::expect_response_to_command(String command,
                                 String response,
                                 unsigned int timeout_ms){
@@ -75,7 +92,11 @@ bool ESP8266::expect_response_to_command(String command,
 }
 
 
-// Send a command and print the response
+/* print_response_to_command()
+ *  Send a command and print the response.  
+ *  
+ *  For debugging.
+ */
 bool ESP8266::print_response_to_command(String command,
                                unsigned int timeout_ms){
   String input_buffer = "";
@@ -101,7 +122,11 @@ bool ESP8266::print_response_to_command(String command,
 }
 
 
-// Setup the ESP8266 as a webserver
+/* setup_device()
+ *  
+ *  Setup the ESP8266 as a webserver
+ *  
+ */
 bool ESP8266::setup_device(){
     // Get a response from anyone
     Serial.print(F("ESP8266 - Waiting for a response from the Wifi Device..."));
@@ -166,7 +191,9 @@ bool ESP8266::setup_device(){
 }
 
 
-//Send the contents of my output queue to a specific channel
+/* send_output_queue()
+ *  Send the contents of my output queue to a specific channel
+ */
 void ESP8266::send_output_queue(unsigned char channel){
     
     // Command the esp to listen for n bytes of data  // todo: make less stringy
@@ -189,12 +216,7 @@ void ESP8266::send_output_queue(unsigned char channel){
       }else{
         port->write(data_to_write.pointer,data_to_write.string_length);
       }
-      //delay(20);  //from Espressif ICD
     }
-    //Serial.println("Done Sending!!!");
-    // TODO: This is still pretty brittle.  Repeat the cipclose command 
-    //until I get some kind of response, either success or failure from 
-    //the ESP.
     
     // Send the command to terminate the data stream, 
     //   even though it should have been terminated based on length.
@@ -209,12 +231,12 @@ void ESP8266::send_output_queue(unsigned char channel){
                            String("\r\n"));
     // todo: validate that these commands actually worked.  Right now they're open loop.
     port->write(write_command.c_str());
-    Serial.println("wrote CIPCLOSE");
-    //https://www.youtube.com/watch?v=ETLDW22zoMA&t=9s
 }
 
 
-// Send a static website as an HTTP 200 response
+/* send_http_200_static()
+ *  Send a static website as an HTTP 200 response.
+ */
 void ESP8266::send_http_200_static(unsigned char channel, char page_data[], unsigned int page_data_len){
 
   int total_page_size = 0;
@@ -232,7 +254,6 @@ void ESP8266::send_http_200_static(unsigned char channel, char page_data[], unsi
   // Send!
   this->send_output_queue(channel);
 }
-
 
 
 /*-----------------------------------------------------------------

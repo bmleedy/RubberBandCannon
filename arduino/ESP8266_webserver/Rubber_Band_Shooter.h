@@ -1,25 +1,9 @@
 #ifndef RUBBER_BAND_SHOOTER_H
 #define RUBBER_BAND_SHOOTER_H
 /*
-Rubber_Band_Shooter.h
-
-This class controls the Rubber Band Shooter PTZ.
-
-Ideas: 
-    * 3d print a base to attach servo to stepper motor
-    * rename variables for the elevation
-    * Add a camera for targeting
-    * Try to do auto-targeting with camera image
-    * Setup control via wifi
-    * Setup display website
-    * Setup a website to control the gun
-    * possibly get rid of
-    * Might need to add software serial receive for additional I/O: 
-    *   https://www.arduino.cc/en/Tutorial/TwoPortReceive
-    *   https://www.arduino.cc/en/Reference/SoftwareSerial
-    *   http://www.ladyada.net/make/eshield/download.html
-    * Consider storing website static data in EEPROM: https://learn.adafruit.com/memories-of-an-arduino/eeprom
-    * 
+ * Rubber_Band_Shooter.h
+ * 
+ * This class controls the Rubber Band Shooter PTZ.
 */
 #include <Arduino.h>
 #include <ServoTimer2.h>
@@ -53,8 +37,6 @@ Ideas:
 // Unlimited travel
 #define STEPS_PER_REV  32   // Number of steps per internal motor shaft revolution
                             // 2048 steps = 1 internal shaft revolution
-// For correct sequencing using ULN2003APG Motor driver,
-// initialize in this order: In1, In3, In2, In4 
 
 #define BASE_STEP_INCREMENT 5 //degrees per increment
 #define BASE_STEPS_PER_DEGREE 6 //roughly - 2048/360 = 5.6889

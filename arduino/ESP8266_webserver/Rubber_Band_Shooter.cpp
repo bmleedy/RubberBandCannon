@@ -1,25 +1,9 @@
 /*
-RubberBandTerminator.ino
-
-The sole intention of this project is to shoot things with rubber bands using the coolest technology possible. 
-
-Ideas: 
-    * 3d print a base to attach servo to stepper motor
-    * rename variables for the elevation
-    * Add a camera for targeting
-    * Try to do auto-targeting with camera image
-    * Setup control via wifi
-    * Setup display website
-    * Setup a website to control the gun
-    * possibly get rid of
-    * Might need to add software serial receive for additional I/O: 
-    *   https://www.arduino.cc/en/Tutorial/TwoPortReceive
-    *   https://www.arduino.cc/en/Reference/SoftwareSerial
-    *   http://www.ladyada.net/make/eshield/download.html
-    * Consider storing website static data in EEPROM: https://learn.adafruit.com/memories-of-an-arduino/eeprom
-    * 
-*/
-
+ * Rubber_Band_Shooter (Class)
+ * 
+ * This class handles operation of all servos for a pan/tilt/fire rubber band servo system.
+ * 
+ */
 #include "Rubber_Band_Shooter.h"
 
 

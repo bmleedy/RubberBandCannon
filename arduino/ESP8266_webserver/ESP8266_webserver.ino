@@ -1,6 +1,8 @@
 /*---------------------------------------------------------------
  * ESP8266_webserver
  * 
+ * The sole intention of this project is to shoot things with rubber bands using the coolest technology possible.
+ * 
  * This program uses the ESP8266 class to serve up a website. The
  * eventual objective is to merge this code with 
  * RubberBandTerminator.ino to control the rubber band launching
@@ -13,6 +15,7 @@
  *     https://github.com/sleemanj/ESP8266_Simple/blob/master/arduino-wiring-diagram.jpg
  *     https://smile.amazon.com/gp/product/B01EA3UJJ4/ref=oh_aui_detailpage_o02_s00?ie=UTF8&psc=1
  *     https://hackingmajenkoblog.wordpress.com/2016/02/04/the-evils-of-arduino-strings/ 
+ *     https://www.youtube.com/watch?v=ETLDW22zoMA&t=9s
  * 
  * ESP8266 SETUP:
  *     Default baud rate on the chips: 115200bps
@@ -24,25 +27,57 @@
  * The pin used for RX must support change interrupts: 
  *                https://playground.arduino.cc/Code/Interrupts 
  *                
- * PLANS:
- *     * Test the new \n comparison, should be a lot faster
- *     * Get the elevation axis stabilized - figure out what's going on there
- *     * Implement ring buffer
- *     * Move all strings to progmeme
- *     * OK and FAIL strings to a single function, so we only store it in in place
- *     * Make button width and height 100% and give them some color
- *     * Make button table height bigger
- *     * Scrub all code for todo's
- *     * De-stringify
- *     * Consider adding I2C-to-UART bridge for better Serial performance
+ *                
+ * REFERENCE LINKS: 
  *        https://os.mbed.com/users/wim/notebook/sc16is750-i2c-or-spi-to-uart-bridge/
  *        https://www.nxp.com/docs/en/brochure/75015676.pdf
  *        https://www.maximintegrated.com/en/products/interface/controllers-expanders/MAX3107.html
  *        https://www.nxp.com/products/analog/signal-chain/bridges/single-uart-with-i2c-bus-spi-interface-64-bytes-of-transmit-and-receive-fifos-irda-sir-built-in-support:SC16IS740_750_760?tab=Buy_Parametric_Tab&amp;fromSearch=false
  *        https://forum.arduino.cc/index.php?topic=419359.0
  *        
+ *        
+ * PLANS:
+ *          * Move all strings to progmem
+ *          * OK and FAIL strings to a single function, so we only store it in in place
+ *          * Scrub all code for todo's
+ *          * Re-work mechanicals to eliminate dual-lock velcro
+ *          * Create mechanical design files for the rubber band shooter
+ *          * Flesh out webserver stack - make more reliable
+ *          * Store the website in EEPROM
+ *          * Add additional EEPROM storage
+ *          * Use a CDN (like CloudFront) for icons, graphics and other eye candy
+ *          * Use HTTP "Content Length:" header instead of terminating connections
+ *          * Remove all delay() calls in code
+ *          * Enable watchdog timer
+ *          * Use AJAX for command buttons - don't reload the website for each button press
+ *          * Add super-basic MVC to the webserver
+ *          * De-stringify all code (reduce heap fragmentation)
+ *          * Add a camera to the shooter/website (snap after each turn)
+ *          * Create an ESB initializer program, since 
+ *          * Assemble more better-integrated ESP boards
+ *          * Build a protoboard with everything on it
+ *          * Connectorize harness to board (0.1in block connector)
+ *          * Consolidate all constants, etc to a header file
+ *          * Get a better name for the webserver
+ *          * Code lint 
+ *          * Implement TLS
+ *          * Figure out what other goodness the ESP8266 gives us
+ *          * Make the ESP8266 an access point
+ *          * Use access point functionality for device setup
+ *          * Support multiple connections (instead of just connection 0)
+ *          * Harden string safety todo's
+ *          * Add Electrical diagrams for the project
+ *          * Add Mechanical Diagrams for the project
+ *          * Create a README
+ *          * Make a you tube video and link in readme
+ *          * Make a custom icon for the project.
+ *          * Re-visit license terms
+ *          * Try to do auto-targeting with camera image
+ *          * Setup control via wifi
+ *          * Setup display website
+ *          * Setup a website to control the gun
+ *        
  */
-//#include <SoftwareSerial.h>
 #include <AltSoftSerial.h>
 #include <MemoryUsage.h>
 #include "ESP8266.h"
@@ -130,7 +165,7 @@ void loop() {
           Serial.println(F("pan_left"));
           shooter->turn_left();
         } else if(strstr(input_line,"fire") != NULL){
-          Serial.println(F("FIIIIRRRRRREEEE!!!!!!!!!!!!!!"));
+          Serial.println(F("FIRRRRRRE!!!!"));
           shooter->fire();
         }else {
           Serial.println(F("OTHER"));
@@ -146,9 +181,9 @@ void loop() {
     esp->clear_buffer();
   }
 
-  // Read any data from the serial port and output it to the esp8266 port
+
+  // Pass through manual commands to the ESP8266
   unsigned char data;
-  // (this is for manual commands, etc.)
   while(Serial.available()) {
     data = Serial.read();
     softPort.write(data);
