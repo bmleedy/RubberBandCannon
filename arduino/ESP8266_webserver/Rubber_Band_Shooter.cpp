@@ -25,29 +25,33 @@ Ideas:
 
 // Fire the rubber band
 void Rubber_Band_Shooter::fire() {
-  hammer.write(FIRE_HAMMER_POSITION);  //fiiiirrrre!
+  hammer.write(map(FIRE_HAMMER_POSITION,0,180,MIN_PULSE_WIDTH,MAX_PULSE_WIDTH));  //fiiiirrrre!
   delay(1000);  //wait a second for the servo to get there //todo: get rid of blocking delay
-  hammer.write(ARMED_HAMMER_POSITION);  //ready to load again
+  hammer.write(map(ARMED_HAMMER_POSITION,0,180,MIN_PULSE_WIDTH,MAX_PULSE_WIDTH));  //ready to load again
 }
 
 // increase the elevation by one increment
 void Rubber_Band_Shooter::turn_up() {
+  Serial.println("starting command position: ");Serial.println(elevation_command_position);
   //move in positive direction
   elevation_command_position = elevation_command_position + ELEVATION_POSITION_INCREMENT;
-  if(elevation_command_position > (ELEVATION_CENTER_POSITION + ELEVATION_MOVEMENT_RANGE) )
+  if(elevation_command_position > (ELEVATION_CENTER_POSITION + ELEVATION_MOVEMENT_RANGE) ){
     elevation_command_position = (ELEVATION_CENTER_POSITION + ELEVATION_MOVEMENT_RANGE);
+    Serial.print("|Fixing elevation out-of-range elevation input!");Serial.println(elevation_command_position);
+  }
 
-  elevation.write(elevation_command_position);
+  elevation.write(map(elevation_command_position,0,180,MIN_PULSE_WIDTH,MAX_PULSE_WIDTH));
 }
 
 // decrease the elevation by one increment
 void Rubber_Band_Shooter::turn_down() {
+  Serial.print("starting command position: ");Serial.println(elevation_command_position);
   //move in positive direction
   elevation_command_position = elevation_command_position - ELEVATION_POSITION_INCREMENT;
   if(elevation_command_position < (ELEVATION_CENTER_POSITION - ELEVATION_MOVEMENT_RANGE) )
     elevation_command_position = (ELEVATION_CENTER_POSITION - ELEVATION_MOVEMENT_RANGE);
 
-  elevation.write(elevation_command_position);
+  elevation.write(map(elevation_command_position,0,180,MIN_PULSE_WIDTH,MAX_PULSE_WIDTH));
 }
 
 // turn clockwise by one increment
@@ -73,12 +77,13 @@ Rubber_Band_Shooter::Rubber_Band_Shooter(){
   // reserve space for my serial input buffer
   serial_input_buffer.reserve(INPUT_BUFFER_MAX_SIZE);
   serial_input_buffer = "";
-  
+
+  elevation_command_position = ELEVATION_CENTER_POSITION;
   elevation.attach(ELEVATION_PIN);  // attaches the servo on pin 9 to the servo object
-  hammer.write(elevation_command_position);
+  elevation.write(map(elevation_command_position,0,180,MIN_PULSE_WIDTH,MAX_PULSE_WIDTH));
   
   hammer.attach(HAMMER_PIN);
-  hammer.write(ARMED_HAMMER_POSITION);
+  hammer.write(map(ARMED_HAMMER_POSITION,0,180,MIN_PULSE_WIDTH,MAX_PULSE_WIDTH));
 
   small_stepper = new Stepper(STEPS_PER_REV, 2, 6, 10, 7);
 
@@ -86,3 +91,21 @@ Rubber_Band_Shooter::Rubber_Band_Shooter(){
 }
 
 
+// Constructor with pin specifier
+Rubber_Band_Shooter::Rubber_Band_Shooter(unsigned char hammer_pin, unsigned char elevation_pin){
+
+  // reserve space for my serial input buffer
+  serial_input_buffer.reserve(INPUT_BUFFER_MAX_SIZE);
+  serial_input_buffer = "";
+
+  elevation_command_position = ELEVATION_CENTER_POSITION;
+  elevation.attach(elevation_pin);  // attaches the servo on pin 9 to the servo object
+  hammer.write(map(elevation_command_position,0,180,MIN_PULSE_WIDTH,MAX_PULSE_WIDTH));
+  
+  hammer.attach(hammer_pin);
+  hammer.write(map(ARMED_HAMMER_POSITION,0,180,MIN_PULSE_WIDTH,MAX_PULSE_WIDTH));
+
+  small_stepper = new Stepper(STEPS_PER_REV, 2, 6, 10, 7);
+
+  Serial.println("Setup complete.  Running...");
+}

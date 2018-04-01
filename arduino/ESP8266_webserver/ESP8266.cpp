@@ -184,13 +184,14 @@ void ESP8266::send_output_queue(unsigned char channel){
       if(data_to_write.is_progmem){
         for(int i=0;i<data_to_write.string_length;i++){
           port->write(pgm_read_byte(data_to_write.pointer + i));
+          //Serial.write(pgm_read_byte(data_to_write.pointer + i));
         }
       }else{
         port->write(data_to_write.pointer,data_to_write.string_length);
       }
       //delay(20);  //from Espressif ICD
     }
-    Serial.println("Done Sending!!!");
+    //Serial.println("Done Sending!!!");
     // TODO: This is still pretty brittle.  Repeat the cipclose command 
     //until I get some kind of response, either success or failure from 
     //the ESP.
@@ -208,6 +209,7 @@ void ESP8266::send_output_queue(unsigned char channel){
                            String("\r\n"));
     // todo: validate that these commands actually worked.  Right now they're open loop.
     port->write(write_command.c_str());
+    Serial.println("wrote CIPCLOSE");
     //https://www.youtube.com/watch?v=ETLDW22zoMA&t=9s
 }
 

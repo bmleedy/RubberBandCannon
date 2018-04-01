@@ -22,12 +22,13 @@ Ideas:
     * 
 */
 #include <Arduino.h>
-#include <Servo.h>
+#include <ServoTimer2.h>
+//#include <Servo.h>
 #include "Stepper.h"
 #include <SoftwareSerial.h>
 
 ////////////// Serial and Debug Definitions //////////////
-#define SERIAL_BAUD_RATE 57600
+//#define SERIAL_BAUD_RATE 57600
 #define INPUT_BUFFER_MAX_SIZE 500 //bytes - HTTP Requests cannot exceed this size!
 #define USE_WATCHDOG_TIMER
 #define MAX_BLOCKING_DELAY 5 //ms
@@ -42,7 +43,7 @@ Ideas:
 
 // elevation servo - some random servo from my toolbox
 // up = positive (travel is 0-180deg)
-#define ELEVATION_CENTER_POSITION 120 //degrees
+#define ELEVATION_CENTER_POSITION 90 //degrees
 #define ELEVATION_MOVEMENT_RANGE  30 //elevation can move plus or minus this many degrees
 #define ELEVATION_PIN 11 //must be a PWM pin
 #define ELEVATION_POSITION_INCREMENT 5 //degrees
@@ -62,14 +63,15 @@ Ideas:
 
 class Rubber_Band_Shooter{
 private:
-  Servo hammer;
-  Servo elevation;  // create servo object to control a servo
-  int elevation_command_position = ELEVATION_CENTER_POSITION;
+  ServoTimer2 hammer;
+  ServoTimer2 elevation;  // create servo object to control a servo
+  int elevation_command_position;
   Stepper * small_stepper;
   String serial_input_buffer;
 
 public:
   Rubber_Band_Shooter();
+  Rubber_Band_Shooter(unsigned char hammer_pin, unsigned char elevation_pin);
   void fire();
   void turn_up();
   void turn_down();

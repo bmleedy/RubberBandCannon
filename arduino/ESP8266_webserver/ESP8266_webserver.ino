@@ -18,7 +18,7 @@
  *     Default baud rate on the chips: 115200bps
  *     To enable the chips: set all middle pins to +3.3v
  *     Default baud rate is 115200 (software serial port is flaky at this rate)
- *     Use AT+UART_DEF=57600,8,1,0,0 to switch to 57600
+ *     Use AT+UART_DEF=19200,8,1,0,0 to switch to 19200
  * 
  * SOFTWARESERIAL SETUP:
  * The pin used for RX must support change interrupts: 
@@ -53,16 +53,19 @@
 
 //// Serial Port Definitions
 #define PRINT_SERIAL_STREAM false
-#define SERIAL_BAUD_RATE 57600
+#define SERIAL_BAUD_RATE 19200
 
-///SoftwareSerial softPort(8,9); //TX,RX
-AltSoftSerial softPort(8,9);
+///SoftwareSerial softPort(9,8); //TX,RX
+AltSoftSerial softPort;
 
 //// ESP8266 Definitions
 ESP8266 * esp;
 char input_line[SERIAL_INPUT_BUFFER_MAX_SIZE+1];
 
 Rubber_Band_Shooter * shooter;
+
+#define SHOOTER_HAMMER_PIN      3
+#define SHOOTER_ELEVATION_PIN   11
 
 /*---------------------------------------------------------------
  * SETUP
@@ -84,7 +87,7 @@ void setup() {
   esp = new ESP8266(&softPort, PRINT_SERIAL_STREAM);
   Serial.print(F("|   Done. Free Memory: "));Serial.println(mu_freeRam());
 
-  shooter = new Rubber_Band_Shooter();
+  shooter = new Rubber_Band_Shooter(SHOOTER_HAMMER_PIN, SHOOTER_ELEVATION_PIN);
   
   if(PRINT_SERIAL_STREAM)
     Serial.println(F("\n\nENTERING INTERACTIVE SERIAL PASSTHROUGH-------------------"));
@@ -104,12 +107,13 @@ void loop() {
   
   // Read a line (delimited by '\n') from the ESP8266
   if(esp->read_line(input_line)){
-    Serial.print(F("| Line:   '"));Serial.print(input_line);Serial.print(F("'| Free: "));Serial.println(mu_freeRam());
     //Serial.print("Input Line length:  ");Serial.println(input_line->length());
     if(strstr(input_line,"GET") != NULL){
       //Serial.print(F("|   Free Memory: "));Serial.println(mu_freeRam());
-      esp->send_http_200_static(0,(char *)static_website_text,sizeof(static_website_text));
       Serial.println(F("|  GET received"));
+      esp->send_http_200_static(0,(char *)static_website_text,(sizeof(static_website_text)-1));
+      //Serial.print(F("| Line:   '"));Serial.print(input_line);
+      Serial.print(F("'| Free: "));Serial.println(mu_freeRam());
     }else {
       if(strstr(input_line,"POST") != NULL){
         Serial.print(F("|  POST received : "));
@@ -131,19 +135,22 @@ void loop() {
         }else {
           Serial.println(F("OTHER"));
         }
-        esp->send_http_200_static(0,(char *)static_website_text,sizeof(static_website_text));
+        //todo: only refresh a status section on form button submit: 
+        //  https://stackoverflow.com/questions/26943943/how-can-i-refresh-a-partial-view-on-the-main-index-page-on-a-submit-from-a-separ?rq=1
+        esp->send_http_200_static(0,(char *)static_website_text,(sizeof(static_website_text)-1));
+        //Serial.print(F("| Line:   '"));Serial.print(input_line);
+        Serial.print(F("'| Free: "));Serial.println(mu_freeRam());
       }
  
     }
     esp->clear_buffer();
   }
 
-  // todo: consider moving esp8266 to hardware serial
-
   // Read any data from the serial port and output it to the esp8266 port
+  unsigned char data;
   // (this is for manual commands, etc.)
   while(Serial.available()) {
-    unsigned char data = Serial.read();
+    data = Serial.read();
     softPort.write(data);
   }
 }

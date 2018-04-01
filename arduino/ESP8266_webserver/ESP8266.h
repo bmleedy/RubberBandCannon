@@ -7,7 +7,7 @@
 #include "HardwareSerial.h"
 #include "webserver_constants.h"
 
-#define SERIAL_INPUT_BUFFER_MAX_SIZE 100  //maximum line length that I can handle
+#define SERIAL_INPUT_BUFFER_MAX_SIZE 300  //maximum line length that I can handle
 #define MAX_OUTPUT_QUEUE_LENGTH  20       //number of pointers to strings I'll store
 
 
