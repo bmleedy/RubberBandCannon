@@ -7,4 +7,4 @@
 * Elevation Servo
 * Stepper Motor Driver
 * Base (See RubberBandCannon_Base.png)
-* Turret
+* Turret (See RubberBandCannon_Turret.png)
