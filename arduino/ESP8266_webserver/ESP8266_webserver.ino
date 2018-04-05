@@ -150,7 +150,7 @@ void loop() {
     }else {
       if(strstr(input_line,"POST") != NULL){
         Serial.print(F("|  POST received : "));
-        if(strstr(input_line,"tilt_up") != NULL){
+        if(strstr_P(input_line,"tilt_up") != NULL){
           Serial.println(F("tilt_up"));
           shooter->turn_up();
         } else if(strstr(input_line,"tilt_down") != NULL){

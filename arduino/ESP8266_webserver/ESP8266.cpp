@@ -68,8 +68,7 @@ void ESP8266::clear_buffer(){
 bool ESP8266::expect_response_to_command(const char * command, unsigned int command_len,
                                 const char * response, unsigned int response_len,
                                 unsigned int timeout_ms){
-  String input_buffer = "";
-  input_buffer.reserve(100);
+  char input_buffer[100] = "";
 
   // Write the command
   this->port->write(command, command_len);
@@ -77,13 +76,15 @@ bool ESP8266::expect_response_to_command(const char * command, unsigned int comm
   // Spin for timeout_ms
   unsigned int start_time = millis();
   char rv = -1;
+  int bytes_received = 0;
   while((millis() - start_time) < timeout_ms){
-    
     // Read 1 char off the serial port.
     rv = this->port->read();
     if (rv != -1) {
-      input_buffer = String(input_buffer + String(rv));
-      if(input_buffer.indexOf(response) != -1) {
+      input_buffer[bytes_received] = rv;
+      input_buffer[bytes_received+1] = '\0';
+      bytes_received++;
+      if(strstr(input_buffer,response) != NULL) {
         return true;
       }
     }//if(rv != 1)
