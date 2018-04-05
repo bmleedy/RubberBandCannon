@@ -38,7 +38,6 @@
  *        
  *        
  * PLANS:
- *          * OK and FAIL strings to a single function, so we only store it in in place
  *          * Scrub all code for todo's
  *          * Flesh out webserver stack - make more reliable
  *          * Store the website in EEPROM
@@ -49,9 +48,8 @@
  *          * Enable watchdog timer
  *          * Use AJAX for command buttons - don't reload the website for each button press
  *          * Add super-basic MVC to the webserver
- *          * De-stringify all code (reduce heap fragmentation)
  *          * Add a camera to the shooter/website (snap after each turn)
- *          * Create an ESB initializer program, since 
+ *          * Create an ESP initializer program, since 
  *          * Assemble more better-integrated ESP boards
  *          * Build a protoboard with everything on it
  *          * Connectorize harness to board (0.1in block connector)
@@ -63,18 +61,9 @@
  *          * Make the ESP8266 an access point
  *          * Use access point functionality for device setup
  *          * Support multiple connections (instead of just connection 0)
- *          * Harden string safety todo's
- *          * Add Electrical diagrams for the project
- *          * Add Mechanical Diagrams for the project
- *          * Create a README
  *          * Make a you tube video and link in readme
  *          * Make a custom icon for the project.
- *          * Re-visit license terms
- *          * Try to do auto-targeting with camera image
- *          * Setup control via wifi
- *          * Setup display website
- *          * Setup a website to control the gun
- *        
+ *          * Try to do auto-targeting with camera image        
  */
 #include <AltSoftSerial.h>
 #include <MemoryUsage.h>
