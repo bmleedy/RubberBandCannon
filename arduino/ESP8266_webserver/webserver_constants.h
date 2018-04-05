@@ -29,7 +29,7 @@ const char static_website_text[] PROGMEM = "<!DOCTYPE html>\
         function(myaction,myvalue){\
             alert(\"Action: \" + myaction + \"\\nValue: \" + myvalue);\
         });\
-//        $(\"#status_text\").post(\"url_to_post\");\
+//        $(\"#status_text\").post(window.location.href + myaction);\
       });\
     });\
     </script>\
