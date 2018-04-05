@@ -34,6 +34,7 @@
  *        https://www.maximintegrated.com/en/products/interface/controllers-expanders/MAX3107.html
  *        https://www.nxp.com/products/analog/signal-chain/bridges/single-uart-with-i2c-bus-spi-interface-64-bytes-of-transmit-and-receive-fifos-irda-sir-built-in-support:SC16IS740_750_760?tab=Buy_Parametric_Tab&amp;fromSearch=false
  *        https://forum.arduino.cc/index.php?topic=419359.0
+ *        http://arduino-esp8266.readthedocs.io/en/latest/PROGMEM.html
  *        
  *        
  * PLANS:
@@ -109,7 +110,7 @@ void setup() {
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
-  Serial.println("");
+  Serial.println(F(""));
   Serial.println(F("| Serial Port Initialized..."));
   Serial.println(F("| Initializing software serial..."));
   softPort.begin(SERIAL_BAUD_RATE);
@@ -141,28 +142,26 @@ void loop() {
   // Read a line (delimited by '\n') from the ESP8266
   if(esp->read_line(input_line)){
     //Serial.print("Input Line length:  ");Serial.println(input_line->length());
-    if(strstr(input_line,"GET") != NULL){
-      //Serial.print(F("|   Free Memory: "));Serial.println(mu_freeRam());
+    if(strstr_P(input_line,PSTR("GET")) != NULL){
       Serial.println(F("|  GET received"));
       esp->send_http_200_static(0,(char *)static_website_text,(sizeof(static_website_text)-1));
-      //Serial.print(F("| Line:   '"));Serial.print(input_line);
       Serial.print(F("'| Free: "));Serial.println(mu_freeRam());
     }else {
-      if(strstr(input_line,"POST") != NULL){
+      if(strstr_P(input_line,PSTR("POST")) != NULL){
         Serial.print(F("|  POST received : "));
-        if(strstr_P(input_line,"tilt_up") != NULL){
+        if(strstr_P(input_line,PSTR("tilt_up")) != NULL){
           Serial.println(F("tilt_up"));
           shooter->turn_up();
-        } else if(strstr(input_line,"tilt_down") != NULL){
+        } else if(strstr_P(input_line,PSTR("tilt_down")) != NULL){
           Serial.println(F("tilt_down"));
           shooter->turn_down();
-        } else if(strstr(input_line,"pan_right") != NULL){
-          Serial.println(F("pan_right"));
+        } else if(strstr_P(input_line,PSTR("pan_right")) != NULL){
+          Serial.println("pan_right");
           shooter->turn_right();
-        } else if(strstr(input_line,"pan_left") != NULL){
+        } else if(strstr_P(input_line,PSTR("pan_left")) != NULL){
           Serial.println(F("pan_left"));
           shooter->turn_left();
-        } else if(strstr(input_line,"fire") != NULL){
+        } else if(strstr_P(input_line,PSTR("fire")) != NULL){
           Serial.println(F("FIRRRRRRE!!!!"));
           shooter->fire();
         }else {
@@ -174,7 +173,6 @@ void loop() {
         //Serial.print(F("| Line:   '"));Serial.print(input_line);
         Serial.print(F("'| Free: "));Serial.println(mu_freeRam());
       }
- 
     }
     esp->clear_buffer();
   }
