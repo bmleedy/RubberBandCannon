@@ -35,6 +35,7 @@ const char static_website_text[] PROGMEM = "<!DOCTYPE html>\
     </script>\
   </head>\
   <body>\
+    <img src=\"https://s3-us-west-2.amazonaws.com/rubberbandcannon/rubberband.jpg\" alt=\"rubber band image\"}\
     <h1>Command Buttons</h1>\
       <h2>The post button</h2>\
         <table style=\"width:100%\">\

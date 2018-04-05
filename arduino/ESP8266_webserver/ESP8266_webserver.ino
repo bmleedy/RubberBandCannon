@@ -41,8 +41,7 @@
  *          * Scrub all code for todo's
  *          * Flesh out webserver stack - make more reliable
  *          * Store the website in EEPROM
- *          * Add additional EEPROM storage
- *          * Use a CDN (like CloudFront) for icons, graphics and other eye candy
+ *          * Use a CDN (like CloudFront) for icons, graphics and other eye candy (maybe S3?)
  *          * Use HTTP "Content Length:" header instead of terminating connections
  *          * Remove all delay() calls in code
  *          * Enable watchdog timer
