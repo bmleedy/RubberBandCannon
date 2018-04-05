@@ -127,8 +127,8 @@ public:
     void clear_buffer();
     
 private:
-    bool expect_response_to_command(String command,
-                                    String response,
+    bool expect_response_to_command(const char * command, unsigned int command_len,
+                                    const char * response, unsigned int response_len,
                                     unsigned int timeout_ms=2000);
     bool print_response_to_command(String command,
                                    unsigned int timeout_ms=2000);

@@ -65,14 +65,14 @@ void ESP8266::clear_buffer(){
  *  
  *  Used for setting up the ESP8266
  */
-bool ESP8266::expect_response_to_command(String command,
-                                String response,
+bool ESP8266::expect_response_to_command(const char * command, unsigned int command_len,
+                                const char * response, unsigned int response_len,
                                 unsigned int timeout_ms){
   String input_buffer = "";
   input_buffer.reserve(100);
 
   // Write the command
-  this->port->write(String(command + "\r\n").c_str());
+  this->port->write(command, command_len);
   
   // Spin for timeout_ms
   unsigned int start_time = millis();
@@ -130,18 +130,18 @@ bool ESP8266::print_response_to_command(String command,
 bool ESP8266::setup_device(){
     // Get a response from anyone
     Serial.print(F("ESP8266 - Waiting for a response from the Wifi Device..."));
-    while(!expect_response_to_command(String("AT"),String("OK"))){
+    while(!expect_response_to_command("AT",2,"OK",2)){
         delay(100);
     }
     Serial.println("[OK]");
     
     Serial.print(F("ESP8266 - Checking the device CWMODE..."));
     // Set myself up as a client of an access point.
-    if(expect_response_to_command(String("AT+CWMODE?"),String("+CWMODE:1"))){
+    if(expect_response_to_command("AT+CWMODE?",10,"+CWMODE:1",9)){
         Serial.println(F("[OK]"));
     } else {
         Serial.print (F("\nESP8266 -    Setting the mode to 'client mode'"));
-        if(expect_response_to_command(String("AT+CWMODE=1"),String("OK"))){
+        if(expect_response_to_command("AT+CWMODE=1",11,"OK",2)){
             Serial.println(F("[OK]"));
         }
         else {
@@ -152,11 +152,11 @@ bool ESP8266::setup_device(){
     
     // Now join the house access point
     Serial.print(F("ESP8266 - Checking that we are on the 'leedy' network..."));
-    if(expect_response_to_command(String("AT+CWJAP?"),String("+CWJAP:\"leedy\""))){
+    if(expect_response_to_command("AT+CWJAP?",9,"+CWJAP:\"leedy\"",14)){
         Serial.println(F("[OK]"));
     } else {
         Serial.print (F("\nESP8266 -     Not on the 'leedy' network.  Changing the WiFi settings to join network..."));
-        if(expect_response_to_command(String("AT+CWJAP=\"leedy\",\"teamgoat\""),String("OK"),10000)){
+        if(expect_response_to_command("AT+CWJAP=\"leedy\",\"teamgoat\"",27,"OK",2,10000)){
             Serial.println(F("[OK]"));
         }
         else {
@@ -167,11 +167,11 @@ bool ESP8266::setup_device(){
     
     // Set ourselves up to mux connections into our little server
     Serial.print(F("ESP8266 - Checking the CIPMUX Settings..."));
-    if(expect_response_to_command(String("AT+CIPMUX?"),String("+CIPMUX:1"))){
+    if(expect_response_to_command("AT+CIPMUX?",10,"+CIPMUX:1",9)){
         Serial.println(F("[OK]"));
     } else {
         Serial.print (F("\nESP8266 -    Server not enabled yet. Setting CIPMUX=1..."));
-        if(expect_response_to_command(String("AT+CIPMUX=1"),String("OK"),10000)){
+        if(expect_response_to_command("AT+CIPMUX=1",11,"OK",2,10000)){
             Serial.println(F("[OK]"));
         }
         else {
@@ -182,7 +182,7 @@ bool ESP8266::setup_device(){
     
     // Now setup the CIP Server
     Serial.print(F("ESP8266 - Configuring my server on port 8080..."));
-    if(expect_response_to_command(String("AT+CIPSERVER=1,8080"),String("OK"),10000)){
+    if(expect_response_to_command("AT+CIPSERVER=1,8080",19,"OK",2,10000)){
         Serial.println(F("[OK]"));
     } else {
         Serial.println(F("[FAIL]"));
