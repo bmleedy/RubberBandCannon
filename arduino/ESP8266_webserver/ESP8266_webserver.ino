@@ -38,7 +38,6 @@
  *        
  *        
  * PLANS:
- *          * Move all strings to progmem
  *          * OK and FAIL strings to a single function, so we only store it in in place
  *          * Scrub all code for todo's
  *          * Flesh out webserver stack - make more reliable

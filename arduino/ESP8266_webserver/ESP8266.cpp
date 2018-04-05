@@ -104,7 +104,7 @@ bool ESP8266::setup_device(){
     while(!expect_response_to_command("AT",2,"OK",2)){
         delay(100);
     }
-    Serial.println("[OK]");
+    Serial.println(F("[OK]"));
     
     Serial.print(F("ESP8266 - Checking the device CWMODE..."));
     // Set myself up as a client of an access point.
@@ -173,14 +173,6 @@ void ESP8266::send_output_queue(unsigned char channel){
                                                          channel,
                                                          output_queue.get_total_size());
     port->write(write_command_string);
-    /*
-    String write_command = String(String("AT+CIPSEND=")+
-                                  String(channel)+
-                                  String(",")+
-                                  String(output_queue.get_total_size())+
-                                  String("\r\n"));
-    port->write(write_command.c_str());
-    */
     delay(20);
 
     string_element data_to_write;
