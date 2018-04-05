@@ -17,7 +17,7 @@
 // Constructor: SoftwareSerial port must be initialized
 ESP8266::ESP8266(AltSoftSerial *port, bool verbose){
   this->port = port;
-  serial_input_buffer = new CircularBuffer();  //todo: initialize size of buffer in constructor
+  serial_input_buffer = new CircularBuffer(SERIAL_INPUT_BUFFER_MAX_SIZE);
   this->setup_device();
   this->verbose = verbose;
 }
@@ -195,14 +195,21 @@ bool ESP8266::setup_device(){
  *  Send the contents of my output queue to a specific channel
  */
 void ESP8266::send_output_queue(unsigned char channel){
-    
-    // Command the esp to listen for n bytes of data  // todo: make less stringy
+    const char loc_write_buf_len = 25;
+    // Command the esp to listen for n bytes of data
+    char write_command_string[loc_write_buf_len];
+    snprintf_P((write_command_string+11),loc_write_buf_len,"AT+CIPSEND=%d,%d\r\n",
+                                                         channel,
+                                                         output_queue.get_total_size());
+    port->write(write_command_string);
+    /*
     String write_command = String(String("AT+CIPSEND=")+
                                   String(channel)+
                                   String(",")+
                                   String(output_queue.get_total_size())+
-                                  String("\r\n"));//todo: make this less stringy.
+                                  String("\r\n"));
     port->write(write_command.c_str());
+    */
     delay(20);
 
     string_element data_to_write;
@@ -225,12 +232,18 @@ void ESP8266::send_output_queue(unsigned char channel){
     // Wait 100 ms before sending any other command, per the Espressif ICD
     delay(100); 
     
-    // Now close the connection  // todo: make less stringy
+    // Now close the connection  
+    snprintf_P((write_command_string+11),loc_write_buf_len,"AT+CIPCLOSE=%d\r\n",
+                                                         channel);
+    port->write(write_command_string);
+/*      
+    // todo: make less stringy
     write_command = String(String("AT+CIPCLOSE=")+
                            String(channel)+
                            String("\r\n"));
-    // todo: validate that these commands actually worked.  Right now they're open loop.
     port->write(write_command.c_str());
+*/
+    // todo: validate that these commands actually worked.  Right now they're open loop.
 }
 
 
@@ -327,9 +340,10 @@ unsigned int OutputQueue::get_total_size(){
  */
 
 // Constructor just clears the buffer
-CircularBuffer::CircularBuffer(){
+CircularBuffer::CircularBuffer(int buf_size){
+  this->buf = new char[buf_size];
   this->buf_reset();
-  this->buf_size = SERIAL_INPUT_BUFFER_MAX_SIZE;
+  this->buf_size = buf_size;
 }
 
 

@@ -75,13 +75,13 @@ class OutputQueue{
 
 class CircularBuffer{
 private:
-  char buf[SERIAL_INPUT_BUFFER_MAX_SIZE];
+  char * buf;
   unsigned int head;
   unsigned int tail;
   unsigned int buf_size; //of the buffer
   
 public:
-  CircularBuffer();
+  CircularBuffer(int buf_size);
   void buf_reset();
   bool buf_put(char data);
   int buf_put_multiple(char data, unsigned int n);//not yet implemented
