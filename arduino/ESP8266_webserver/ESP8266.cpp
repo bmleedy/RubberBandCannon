@@ -199,7 +199,7 @@ void ESP8266::send_output_queue(unsigned char channel){
     const char loc_write_buf_len = 25;
     // Command the esp to listen for n bytes of data
     char write_command_string[loc_write_buf_len];
-    snprintf_P((write_command_string+11),loc_write_buf_len,"AT+CIPSEND=%d,%d\r\n",
+    snprintf_P((write_command_string+11),loc_write_buf_len,PSTR("AT+CIPSEND=%d,%d\r\n"),
                                                          channel,
                                                          output_queue.get_total_size());
     port->write(write_command_string);
@@ -234,7 +234,7 @@ void ESP8266::send_output_queue(unsigned char channel){
     delay(100); 
     
     // Now close the connection  
-    snprintf_P((write_command_string+11),loc_write_buf_len,"AT+CIPCLOSE=%d\r\n",
+    snprintf_P((write_command_string+11),loc_write_buf_len,PSTR("AT+CIPCLOSE=%d\r\n"),
                                                          channel);
     port->write(write_command_string);
 /*      
