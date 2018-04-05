@@ -130,10 +130,7 @@ private:
     bool expect_response_to_command(const char * command, unsigned int command_len,
                                     const char * response, unsigned int response_len,
                                     unsigned int timeout_ms=2000);
-    bool print_response_to_command(String command,
-                                   unsigned int timeout_ms=2000);
     bool setup_device();
-    void send_data(unsigned char channel, String data);//deprecated
     void send_output_queue(unsigned char channel);
 };
 

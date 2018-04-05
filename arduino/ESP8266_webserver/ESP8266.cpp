@@ -93,36 +93,6 @@ bool ESP8266::expect_response_to_command(const char * command, unsigned int comm
 }
 
 
-/* print_response_to_command()
- *  Send a command and print the response.  
- *  
- *  For debugging.
- */
-bool ESP8266::print_response_to_command(String command,
-                               unsigned int timeout_ms){
-  String input_buffer = "";
-  input_buffer.reserve(100);
-  
-  // Write the command
-  this->port->write(String(command + "\r\n").c_str());
-  
-  // Spin for timeout_ms
-  unsigned int start_time = millis();
-  char rv = -1;
-  while((millis() - start_time) < timeout_ms){
-      // Read 1 char off the serial port.
-      rv = this->port->read();
-      if (rv != -1) {
-          input_buffer = String(input_buffer + String(rv));
-          if(input_buffer.indexOf("\r\n\r\nOK") != -1) {
-              return true;
-          }
-      }//if(rv != 1)
-  }//while(millis...)
-  return false;
-}
-
-
 /* setup_device()
  *  
  *  Setup the ESP8266 as a webserver
@@ -237,13 +207,6 @@ void ESP8266::send_output_queue(unsigned char channel){
     snprintf_P((write_command_string+11),loc_write_buf_len,PSTR("AT+CIPCLOSE=%d\r\n"),
                                                          channel);
     port->write(write_command_string);
-/*      
-    // todo: make less stringy
-    write_command = String(String("AT+CIPCLOSE=")+
-                           String(channel)+
-                           String("\r\n"));
-    port->write(write_command.c_str());
-*/
     // todo: validate that these commands actually worked.  Right now they're open loop.
 }
 
