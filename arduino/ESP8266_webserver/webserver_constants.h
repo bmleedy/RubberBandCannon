@@ -19,6 +19,7 @@ const char http_200_start_line[] PROGMEM = "HTTP/1.1 200 OK\r\n\r\n";
 const char static_website_text[] PROGMEM = "<!DOCTYPE html>\
 <html>\
   <head>\
+    <link rel=\"icon\" type=\"image/png\" href=\"https://s3-us-west-2.amazonaws.com/rubberbandcannon/Cannon_icon_64.png\">\
     <title>Brett's Rubber Band Cannon</title>\
     <script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js\"></script>\
     <script>\
