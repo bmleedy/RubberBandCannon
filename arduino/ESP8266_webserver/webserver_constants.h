@@ -14,9 +14,26 @@ const char http_200_start_line[] PROGMEM = "HTTP/1.1 200 OK\r\n\r\n";
 #define HTTP_200_START_LINE_LEN 19
 
 //  http://www.nongnu.org/avr-libc/user-manual/group__avr__pgmspace.html
+// https://www.w3schools.com/jquery/jquery_ajax_intro.asp
+// https://www.w3schools.com/jquery/jquery_examples.asp
 const char static_website_text[] PROGMEM = "<!DOCTYPE html>\
 <html>\
-  <head><title>Brett's Rubber Band Cannon</title></head>\
+  <head>\
+    <title>Brett's Rubber Band Cannon</title>\
+    <script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js\"></script>\
+    <script>\
+    $(document).ready(function(){\
+      $(\"button\").click(function(){\
+        myaction = $(this).attr(\"action\");\
+        myvalue = $(this).attr(\"value\");\
+        function(myaction,myvalue){\
+            alert(\"Action: \" + myaction + \"\\nValue: \" + myvalue);\
+        });\
+//        $(\"#status_text\").post(\"url_to_post\");\
+      });\
+    });\
+    </script>\
+  </head>\
   <body>\
     <h1>Command Buttons</h1>\
       <h2>The post button</h2>\
@@ -46,6 +63,8 @@ const char static_website_text[] PROGMEM = "<!DOCTYPE html>\
            </form></td>\
          </tr>\
        </table>\
+     <h2>Status</h2>\
+       <div id=\"status_text\">Button Command Status</div>\
   </body>\
 </html>";
 #endif /* webserver_constants_h */

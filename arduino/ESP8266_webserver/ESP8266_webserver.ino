@@ -156,9 +156,7 @@ void loop() {
           Serial.println(F("OTHER"));
         }
         //todo: only refresh a status section on form button submit: 
-        //  https://stackoverflow.com/questions/26943943/how-can-i-refresh-a-partial-view-on-the-main-index-page-on-a-submit-from-a-separ?rq=1
         esp->send_http_200_static(0,(char *)static_website_text,(sizeof(static_website_text)-1));
-        //Serial.print(F("| Line:   '"));Serial.print(input_line);
         Serial.print(F("'| Free: "));Serial.println(mu_freeRam());
       }
     }
