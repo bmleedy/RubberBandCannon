@@ -89,6 +89,7 @@ bool ESP8266::expect_response_to_command(const char * command, unsigned int comm
       }
     }//if(rv != 1)
   }//while(millis...)
+  Serial.println(F("Response timed out"));
   return false;
 }
 
@@ -101,18 +102,18 @@ bool ESP8266::expect_response_to_command(const char * command, unsigned int comm
 bool ESP8266::setup_device(){
     // Get a response from anyone
     Serial.print(F("ESP8266 - Waiting for a response from the Wifi Device..."));
-    while(!expect_response_to_command("AT",2,"OK",2)){
-        delay(100);
+    while(!expect_response_to_command("AT\r\n",4,"OK",2)){
+        delay(1000);
     }
     Serial.println(F("[OK]"));
     
     Serial.print(F("ESP8266 - Checking the device CWMODE..."));
     // Set myself up as a client of an access point.
-    if(expect_response_to_command("AT+CWMODE?",10,"+CWMODE:1",9)){
+    if(expect_response_to_command("AT+CWMODE?\r\n",12,"+CWMODE:1",9)){
         Serial.println(F("[OK]"));
     } else {
         Serial.print (F("\nESP8266 -    Setting the mode to 'client mode'"));
-        if(expect_response_to_command("AT+CWMODE=1",11,"OK",2)){
+        if(expect_response_to_command("AT+CWMODE=1\r\n",13,"OK",2)){
             Serial.println(F("[OK]"));
         }
         else {
@@ -123,11 +124,11 @@ bool ESP8266::setup_device(){
     
     // Now join the house access point
     Serial.print(F("ESP8266 - Checking that we are on the 'leedy' network..."));
-    if(expect_response_to_command("AT+CWJAP?",9,"+CWJAP:\"leedy\"",14)){
+    if(expect_response_to_command("AT+CWJAP?\r\n",11,"+CWJAP:\"leedy\"",14)){
         Serial.println(F("[OK]"));
     } else {
         Serial.print (F("\nESP8266 -     Not on the 'leedy' network.  Changing the WiFi settings to join network..."));
-        if(expect_response_to_command("AT+CWJAP=\"leedy\",\"teamgoat\"",27,"OK",2,10000)){
+        if(expect_response_to_command("AT+CWJAP=\"leedy\",\"teamgoat\"\r\n",29,"OK",2,10000)){
             Serial.println(F("[OK]"));
         }
         else {
@@ -138,11 +139,11 @@ bool ESP8266::setup_device(){
     
     // Set ourselves up to mux connections into our little server
     Serial.print(F("ESP8266 - Checking the CIPMUX Settings..."));
-    if(expect_response_to_command("AT+CIPMUX?",10,"+CIPMUX:1",9)){
+    if(expect_response_to_command("AT+CIPMUX?\r\n",12,"+CIPMUX:1",9)){
         Serial.println(F("[OK]"));
     } else {
         Serial.print (F("\nESP8266 -    Server not enabled yet. Setting CIPMUX=1..."));
-        if(expect_response_to_command("AT+CIPMUX=1",11,"OK",2,10000)){
+        if(expect_response_to_command("AT+CIPMUX=1\r\n",13,"OK",2,10000)){
             Serial.println(F("[OK]"));
         }
         else {
@@ -153,7 +154,7 @@ bool ESP8266::setup_device(){
     
     // Now setup the CIP Server
     Serial.print(F("ESP8266 - Configuring my server on port 8080..."));
-    if(expect_response_to_command("AT+CIPSERVER=1,8080",19,"OK",2,10000)){
+    if(expect_response_to_command("AT+CIPSERVER=1,8080\r\n",21,"OK",2,10000)){
         Serial.println(F("[OK]"));
     } else {
         Serial.println(F("[FAIL]"));
@@ -169,7 +170,7 @@ void ESP8266::send_output_queue(unsigned char channel){
     const char loc_write_buf_len = 25;
     // Command the esp to listen for n bytes of data
     char write_command_string[loc_write_buf_len];
-    snprintf_P((write_command_string+11),loc_write_buf_len,PSTR("AT+CIPSEND=%d,%d\r\n"),
+    snprintf_P((write_command_string),loc_write_buf_len,PSTR("AT+CIPSEND=%d,%d\r\n"),
                                                          channel,
                                                          output_queue.get_total_size());
     port->write(write_command_string);
@@ -190,7 +191,7 @@ void ESP8266::send_output_queue(unsigned char channel){
     
     // Send the command to terminate the data stream, 
     //   even though it should have been terminated based on length.
-    port->write("+++",3);
+    port->write("+++\r\n",3);
 
     // Wait 100 ms before sending any other command, per the Espressif ICD
     delay(100); 

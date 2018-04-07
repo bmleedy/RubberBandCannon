@@ -43,7 +43,7 @@ const char static_website_text[] PROGMEM = "<!DOCTYPE html>\
           <tr height=\"80\">\
             <td></td>\
             <td><form action=\"tilt_up\" method=\"post\">\
-                <button style=\"width: 100%;height: 50px;\" type=\"submit\">Up</button>\
+              <button style=\"width: 100%;height: 50px;\" type=\"submit\">Up</button>\
             </form></td>\
             <td></td>\
           </tr>\

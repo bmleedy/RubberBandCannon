@@ -159,7 +159,11 @@ void loop() {
         Serial.print(F("'| Free: "));Serial.println(mu_freeRam());
       }
     }
+    Serial.println("Clear buffer");
+    Serial.print(F("'| Free: "));Serial.println(mu_freeRam());
     esp->clear_buffer();
+    Serial.println("Buffer Cleared");
+    Serial.print(F("'| Free: "));Serial.println(mu_freeRam());
   }
 
 
