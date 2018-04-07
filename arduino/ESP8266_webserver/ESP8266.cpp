@@ -20,6 +20,8 @@ ESP8266::ESP8266(AltSoftSerial *port, bool verbose){
   serial_input_buffer = new CircularBuffer(SERIAL_INPUT_BUFFER_MAX_SIZE);
   this->setup_device();
   this->verbose = verbose;
+  this->dump_reads = false;
+  this->dump_writes= false;
 }
 
 /* read_line() 
@@ -35,7 +37,7 @@ bool ESP8266::read_line(char line_buffer[]){
   //todo: add max length to copy for buffer as an arg.
   char latest_byte = '\0';
   while (this->port->available()) {
-    latest_byte = this->port->read();
+    latest_byte = read_port();
 
     // Add the byte I read to the input buffer
     serial_input_buffer->buf_put(latest_byte);
@@ -79,7 +81,7 @@ bool ESP8266::expect_response_to_command(const char * command, unsigned int comm
   int bytes_received = 0;
   while((millis() - start_time) < timeout_ms){
     // Read 1 char off the serial port.
-    rv = this->port->read();
+    rv = read_port();
     if (rv != -1) {
       input_buffer[bytes_received] = rv;
       input_buffer[bytes_received+1] = '\0';
@@ -173,7 +175,7 @@ void ESP8266::send_output_queue(unsigned char channel){
     snprintf_P((write_command_string),loc_write_buf_len,PSTR("AT+CIPSEND=%d,%d\r\n"),
                                                          channel,
                                                          output_queue.get_total_size());
-    port->write(write_command_string);
+    write_port(write_command_string,strlen(write_command_string));
     delay(20);
 
     string_element data_to_write;
@@ -181,25 +183,26 @@ void ESP8266::send_output_queue(unsigned char channel){
     while(output_queue.get_element(&data_to_write)){
       if(data_to_write.is_progmem){
         for(int i=0;i<data_to_write.string_length;i++){
-          port->write(pgm_read_byte(data_to_write.pointer + i));
-          //Serial.write(pgm_read_byte(data_to_write.pointer + i));
+          char byte_to_write = pgm_read_byte(data_to_write.pointer + i);
+          write_port(&byte_to_write, 1);
         }
       }else{
-        port->write(data_to_write.pointer,data_to_write.string_length);
+        write_port(data_to_write.pointer,data_to_write.string_length);
       }
     }
     
     // Send the command to terminate the data stream, 
     //   even though it should have been terminated based on length.
-    port->write("+++\r\n",3);
+    write_port((char *)"+++\r\n",5);
 
-    // Wait 100 ms before sending any other command, per the Espressif ICD
-    delay(100); 
+    // Wait 500 ms before sending any other command, per the Espressif ICD, this should be 1s
+    delay(500); 
     
     // Now close the connection  
-    snprintf_P((write_command_string+11),loc_write_buf_len,PSTR("AT+CIPCLOSE=%d\r\n"),
-                                                         channel);
-    port->write(write_command_string);
+    // todo: this is hacky - just crushes all connections.
+    snprintf_P((write_command_string),loc_write_buf_len,PSTR("AT+CIPCLOSE=%d\r\n"),
+                                                           channel);
+    write_port(write_command_string,strlen(write_command_string));
     // todo: validate that these commands actually worked.  Right now they're open loop.
 }
 
@@ -218,6 +221,10 @@ void ESP8266::send_http_200_static(unsigned char channel, char page_data[], unsi
   // start-line per https://tools.ietf.org/html/rfc2616#page-31 
   this->output_queue.add_element((char *)http_200_start_line, HTTP_200_START_LINE_LEN, true);
 
+  //content-length header
+  //this->output_queue.add_element(PSTR("Content-Length: 1947\r\n\r\n"),24,true);
+  //todo: put in content length header
+
   // Now enqueue the website page data
   this->output_queue.add_element(page_data, page_data_len,true);
   
@@ -225,6 +232,19 @@ void ESP8266::send_http_200_static(unsigned char channel, char page_data[], unsi
   this->send_output_queue(channel);
 }
 
+void ESP8266::write_port(char * write_string, unsigned int len){
+  //write to port here
+  this->port->write(write_string, len);
+  if(this->dump_writes)
+    Serial.write(write_string,len);
+}
+
+char ESP8266::read_port(){
+  char rv = this->port->read();
+  if(this->dump_reads)
+    Serial.write(rv);
+  return rv;
+}
 
 /*-----------------------------------------------------------------
  * OutputQueue

@@ -32,7 +32,6 @@
  *        https://os.mbed.com/users/wim/notebook/sc16is750-i2c-or-spi-to-uart-bridge/
  *        https://www.nxp.com/docs/en/brochure/75015676.pdf
  *        https://www.maximintegrated.com/en/products/interface/controllers-expanders/MAX3107.html
- *        https://www.nxp.com/products/analog/signal-chain/bridges/single-uart-with-i2c-bus-spi-interface-64-bytes-of-transmit-and-receive-fifos-irda-sir-built-in-support:SC16IS740_750_760?tab=Buy_Parametric_Tab&amp;fromSearch=false
  *        https://forum.arduino.cc/index.php?topic=419359.0
  *        http://arduino-esp8266.readthedocs.io/en/latest/PROGMEM.html
  *        
@@ -122,20 +121,41 @@ void setup() {
  *-------------------------------------------------------------*/
 
 
+char get_channel(char line[], int len){
+  char string_to_parse[len]; 
+  strncpy(string_to_parse,line,len);
+  char rv = 0;
 
+  //Try to find the channel indicator
+  char * token = strstr_P(string_to_parse, PSTR("IPD,"));
+
+  if(token != NULL){
+    strtok(token,","); //this is "IPD"
+    char * chan_string = strtok(NULL,","); //this is the channel ID
+    rv = atoi(chan_string);
+  }
+  return rv;
+  
+}
+
+char channel = 0;
 void loop() {
 
   
   // Read a line (delimited by '\n') from the ESP8266
   if(esp->read_line(input_line)){
     //Serial.print("Input Line length:  ");Serial.println(input_line->length());
+
+    //First, parse out the connection channel, zero of none is found
+    channel = get_channel(input_line,50);
+
     if(strstr_P(input_line,PSTR("GET")) != NULL){
-      Serial.println(F("|  GET received"));
-      esp->send_http_200_static(0,(char *)static_website_text,(sizeof(static_website_text)-1));
+      Serial.print(F("|  GET received on channel ")); Serial.println(channel);
+      esp->send_http_200_static(channel,(char *)static_website_text,(sizeof(static_website_text)-1));
       Serial.print(F("'| Free: "));Serial.println(mu_freeRam());
     }else {
       if(strstr_P(input_line,PSTR("POST")) != NULL){
-        Serial.print(F("|  POST received : "));
+        Serial.print(F("|  POST received on channel ")); Serial.println(channel,DEC);
         if(strstr_P(input_line,PSTR("tilt_up")) != NULL){
           Serial.println(F("tilt_up"));
           shooter->turn_up();
@@ -155,17 +175,11 @@ void loop() {
           Serial.println(F("OTHER"));
         }
         //todo: only refresh a status section on form button submit: 
-        esp->send_http_200_static(0,(char *)static_website_text,(sizeof(static_website_text)-1));
+        esp->send_http_200_static(channel,(char *)static_website_text,(sizeof(static_website_text)-1));
         Serial.print(F("'| Free: "));Serial.println(mu_freeRam());
       }
     }
-    Serial.println("Clear buffer");
-    Serial.print(F("'| Free: "));Serial.println(mu_freeRam());
-    esp->clear_buffer();
-    Serial.println("Buffer Cleared");
-    Serial.print(F("'| Free: "));Serial.println(mu_freeRam());
   }
-
 
   // Pass through manual commands to the ESP8266
   unsigned char data;

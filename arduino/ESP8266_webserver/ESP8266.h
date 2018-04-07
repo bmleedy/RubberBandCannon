@@ -115,6 +115,7 @@ public:
 
 class ESP8266{
 private:
+    bool dump_reads,dump_writes;  //verbosity flags
     AltSoftSerial *port;       //Initialized outside of this class
     CircularBuffer * serial_input_buffer; //todo: Replace with char ring buffer
     bool verbose;               
@@ -132,6 +133,8 @@ private:
                                     unsigned int timeout_ms=2000);
     bool setup_device();
     void send_output_queue(unsigned char channel);
+    char read_port();
+    void write_port(char * write_string, unsigned int len);
 };
 
 

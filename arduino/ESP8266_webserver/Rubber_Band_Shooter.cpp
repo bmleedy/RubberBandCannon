@@ -16,7 +16,6 @@ void Rubber_Band_Shooter::fire() {
 
 // increase the elevation by one increment
 void Rubber_Band_Shooter::turn_up() {
-  Serial.println("starting command position: ");Serial.println(elevation_command_position);
   //move in positive direction
   elevation_command_position = elevation_command_position + ELEVATION_POSITION_INCREMENT;
   if(elevation_command_position > (ELEVATION_CENTER_POSITION + ELEVATION_MOVEMENT_RANGE) ){
@@ -29,7 +28,6 @@ void Rubber_Band_Shooter::turn_up() {
 
 // decrease the elevation by one increment
 void Rubber_Band_Shooter::turn_down() {
-  Serial.print("starting command position: ");Serial.println(elevation_command_position);
   //move in positive direction
   elevation_command_position = elevation_command_position - ELEVATION_POSITION_INCREMENT;
   if(elevation_command_position < (ELEVATION_CENTER_POSITION - ELEVATION_MOVEMENT_RANGE) )
