@@ -17,11 +17,7 @@ const char http_200_start_line[] PROGMEM = "HTTP/1.1 200 OK\r\n\r\n";
 // https://www.w3schools.com/jquery/jquery_ajax_intro.asp
 // https://www.w3schools.com/jquery/jquery_examples.asp
 
-/*
- *       myself = document.getElementById(\"pan_left\");\
-      myval = myself.id;\
-      myurl = window.location.href;\
- */
+
 const char blank_website_text[] PROGMEM = "<!DOCTYPE html>\
 <html>\
   <body>\
@@ -49,23 +45,21 @@ const char static_website_text[] PROGMEM = "<!DOCTYPE html>\
     <br>\
     <h1>Command Buttons</h1>\
         <table style=\"width:100%\">\
-          <tr height=\"80\">\
+          <tr>\
             <td></td>\
-            <td><input id=\"tilt_up\" style=\"width: 100%;height: 50px;\" type=\"button\" onclick=\"doFunction('tilt_up')\" value=\"Up\"></td>\
+            <td><input id=\"tilt_up\" style=\"width: 100%;height: 100px;\" type=\"button\" onclick=\"doFunction('tilt_up')\" value=\"Up\"></td>\
             <td></td>\
           </tr>\
           <tr>\
-           <td><input id=\"pan_left\" style=\"width: 100%;height: 50px;\" type=\"button\" onclick=\"doFunction('pan_left')\" value=\"Left\"></td>\
+           <td><input id=\"pan_left\" style=\"width: 100%;height: 100px;\" type=\"button\" onclick=\"doFunction('pan_left')\" value=\"Left\"></td>\
            <td></td>\
-           <td><input id=\"pan_right\" style=\"width: 100%;height: 50px;\" type=\"button\" onclick=\"doFunction('pan_right')\" value=\"Right\"></td>\
+           <td><input id=\"pan_right\" style=\"width: 100%;height: 100px;\" type=\"button\" onclick=\"doFunction('pan_right')\" value=\"Right\"></td>\
          <tr>\
            <td></td>\
-           <td><input id=\"tilt_down\" style=\"width: 100%;height: 50px;\" type=\"button\" onclick=\"doFunction('tilt_down')\" value=\"Down\"></td>\
-           <td><input id=\"fire\" style=\"width: 100%;height: 50px;background-color: red;\" type=\"button\" onclick=\"doFunction('fire')\" value=\"FIRE\"></td>\
+           <td><input id=\"tilt_down\" style=\"width: 100%;height: 100px;\" type=\"button\" onclick=\"doFunction('tilt_down')\" value=\"Down\"></td>\
+           <td><input id=\"fire\" style=\"width: 100%;height: 100px;background-color: red;\" type=\"button\" onclick=\"doFunction('fire')\" value=\"FIRE\"></td>\
          </tr>\
        </table>\
-     <h2>Status</h2>\
-       <div id=\"status_text\">Button Command Status</div>\
   </body>\
 </html>";
 #endif /* webserver_constants_h */
