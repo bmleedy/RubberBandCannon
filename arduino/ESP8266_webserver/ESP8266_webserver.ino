@@ -175,7 +175,7 @@ void loop() {
           Serial.println(F("OTHER"));
         }
         //todo: only refresh a status section on form button submit: 
-        esp->send_http_200_static(channel,(char *)static_website_text,(sizeof(static_website_text)-1));
+        esp->send_http_200_static(channel,(char *)blank_website_text,(sizeof(blank_website_text)-1));
         Serial.print(F("'| Free: "));Serial.println(mu_freeRam());
       }
     }
