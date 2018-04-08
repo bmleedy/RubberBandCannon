@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+
+# Temporary and generated files
+*~
+*.html.h

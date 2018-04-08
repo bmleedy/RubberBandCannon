@@ -26,7 +26,11 @@ const char blank_website_text[] PROGMEM = "<!DOCTYPE html>\
 </html>";
 
 
-const char static_website_text[] PROGMEM = "<!DOCTYPE html>\
+//This file is generated
+#include "static_website.html.h"
+
+/*
+"<!DOCTYPE html>\
 <html>\
   <head>\
     <link rel=\"icon\" type=\"image/png\" href=\"https://s3-us-west-2.amazonaws.com/rubberbandcannon/Cannon_icon_64.png\">\
@@ -62,4 +66,5 @@ const char static_website_text[] PROGMEM = "<!DOCTYPE html>\
        </table>\
   </body>\
 </html>";
+*/
 #endif /* webserver_constants_h */
