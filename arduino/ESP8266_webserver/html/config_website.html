@@ -69,8 +69,8 @@
     <script language="javascript">
       var prefetch_data = {
       ////config_website_prefetch
-      //all data between the quad_slashes will be replaced with a callback to fill the output queue with prefetch data.
-      //Fake data for testing - insert prefetch data here
+//      all data between the quad_slashes will be replaced with a callback to fill the output queue with prefetch data.
+//      Fake data for testing - insert prefetch data here
                            ssid__:"leedy",
                            conctd:true,
                            ipaddr:"192.168.1.25",
@@ -80,16 +80,16 @@
                            confim:"https://cdn.pixabay.com/photo/2014/10/03/17/16/gear-472006_1280.jpg",
                            dbg_bd:"19200",
                            esp_bd:"9600"
-      //example generated data:
-      //const char config_website_text_0 PROGMEM = "<section above this comment>"
-      //const char PROGMEM config_website_prefetch[][7] = {"ssid__","concd","ipaddr",
-      //                                                   "macaddr","port__","tgt_im",
-      //                                                   "confim","dbg_bd","esp_bd");
-      //const int  config_website_prefetch_len = 9;  //number of strings to prefetch
-      //const char config_website_text_1 PROGMEM = "<section below this comment>"
+//    example generated data:
+//    const char config_website_text_0 PROGMEM = "<section above this comment>"
+//    const char PROGMEM config_website_prefetch[][7] = {"ssid__","concd","ipaddr",
+//                                                       "macaddr","port__","tgt_im",
+//                                                       "confim","dbg_bd","esp_bd");
+//    const int  config_website_prefetch_len = 9;  //number of strings to prefetch
+//    const char config_website_text_1 PROGMEM = "<section below this comment>"
       ////
       };
-      // change content or values for tags with prefetch classes
+//    //change content or values for tags with prefetch classes
       function render_prefetch(key,value){
         console.log("prefetch called with name " + key);
         fieldstofill = document.getElementsByClassName(key);
@@ -101,12 +101,12 @@
           }
         }
       }
-      // For each prefetched data element, render it into the page
+//    //For each prefetched data element, render it into the page
       keys = Object.keys(prefetch_data);
       for(var i=0; i < keys.length; i++){
         render_prefetch(keys[i],prefetch_data[keys[i]]); 
       }
-      // Callback to fetch network list from the ESP8266
+//    // Callback to fetch network list from the ESP8266
       function fetchNetworks(myarg) {
         geturl = window.location;
         var baseUrl = geturl.protocol + "//" + geturl.host + "/status/networks";
