@@ -68,8 +68,8 @@
   <footer>
     <script language="javascript">
       var prefetch_data = {
-      ////config_website_prefetch
-//      all data between the quad_slashes will be replaced with a callback to fill the output queue with prefetch data.
+//FETCHDATA_START
+//      all data between the quad_slashes and "//END" will be replaced with a callback to fill the output queue with prefetch data.
 //      Fake data for testing - insert prefetch data here
                            ssid__:"leedy",
                            conctd:true,
@@ -87,7 +87,7 @@
 //                                                       "confim","dbg_bd","esp_bd");
 //    const int  config_website_prefetch_len = 9;  //number of strings to prefetch
 //    const char config_website_text_1 PROGMEM = "<section below this comment>"
-      ////
+//FETCHDATA_END
       };
 //    //change content or values for tags with prefetch classes
       function render_prefetch(key,value){

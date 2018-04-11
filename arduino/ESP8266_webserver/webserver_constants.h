@@ -25,9 +25,10 @@ const char blank_website_text[] PROGMEM = "<!DOCTYPE html>\
 
 
 // This file is generated from static_website.html by invoking the bash script:
-//    'source escape_htmlfile.bash static_website.html'
+//    'source generate_headers_from_html.bash'
 // If you update the html file, you need to run the above command to refresh the 
 //    generated header file.
 #include "static_website.html.hh"
+#include "config_website.html.hh"
 
 #endif /* webserver_constants_h */

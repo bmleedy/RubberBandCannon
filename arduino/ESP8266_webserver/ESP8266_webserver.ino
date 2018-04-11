@@ -151,7 +151,7 @@ void loop() {
 
     if(strstr_P(input_line,PSTR("GET")) != NULL){
       Serial.print(F("|  GET received on channel ")); Serial.println(channel);
-      esp->send_http_200_static(channel,(char *)static_website_text,(sizeof(static_website_text)-1));
+      esp->send_http_200_static(channel,(char *)static_website_text_0,(sizeof(static_website_text_0)-1));
       Serial.print(F("'| Free: "));Serial.println(mu_freeRam());
     }else {
       if(strstr_P(input_line,PSTR("POST")) != NULL){
