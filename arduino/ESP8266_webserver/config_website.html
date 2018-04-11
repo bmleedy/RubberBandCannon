@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+    input {
+      width: 120px;
+      height: 20px;
+    }
+    </style>
+    <link rel="icon" type="image/png" href="https://s3-us-west-2.amazonaws.com/rubberbandcannon/Cannon_icon_64.png">
+    <title>Rubber Band Cannon Setup Page</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script language="javascript">
+    function fetchNetworks(myarg) {
+      geturl = window.location;
+      var baseUrl = geturl.protocol + "//" + geturl.host + "/status/networks";
+      $.get(baseUrl);
+    }
+    </script>
+  </head>
+  <body>
+    <img src="https://cdn.pixabay.com/photo/2014/10/03/17/16/gear-472006_1280.jpg" height="150" alt="gears image">
+    <br>
+    <h1>Network Status</h1>
+      <ul>
+        <li>#{ssid__}</li><!--WiFi SSID-->
+        <li>#{conctd}</li><!--is it connected?-->
+        <li>#{ipaddr}</li><!--ip address-->
+        <li>#{macadr}</li><!--mac address-->
+        <li>#{port__}</li><!--port-->
+        <li><a href="http://#{e_ipaddr}:#{e_port__}">Targeting Page</a></li>
+        <li><input type="button" onclick="fetchNetworks()" value="Fetch Networks">
+            <p id="network_list">Click "Fetch Networks" to fill this list.</p>
+        </li>
+      </ul>
+    <h1>Network Setup</h1>
+      <ul>
+        <li>New WiFi SSID:<input id="ssid_box" type="text" size="15">
+                          <input type="button" onclick="submit('ssid')" value="Submit">
+        </li>
+        <li>Set WiFi Password:<input id="password_box" type="password" size="15">
+                              <input type="button" onclick="submit('password')" value="Submit">
+        </li>
+      </ul>
+    <h1>Serial Ports</h1>
+      <ul>
+        <li>New Debug Serial Baud:  <select id="debug_baud">
+                                      <option value="57600">57600</option>
+                                      <option value="38400">38400</option>
+                                      <option value="19200">19200</option>
+                                      <option value="9600">9600</option>
+                                      <option value="4800">4800</option>
+	                            </select>
+                                    <input type="button" onclick="submit('debug_serial')" value="Submit">
+        </li> 
+        <li>New ESP Serial Baud:  <select id="esp_baud">
+                                    <option value="57600">57600</option>
+                                    <option value="38400">38400</option>
+                                    <option value="19200">19200</option>
+                                    <option value="9600" >9600</option>
+                                    <option value="4800" >4800</option>
+                                  </select> 
+                                  <input type="button" onclick="submit('esp_serial')" value="Submit">
+        </li>
+      </ul>
+    <h1>Appearance</h1>
+      <ul>
+        <li>Targeting page image:<textarea id = "targeting_image_box" rows="1" cols="80">#{tgt_im}</textarea><br>
+                                 <input type="button" onclick="submit('targeting_image')" value="Submit">
+        </li>
+        <li>Config page image: <textarea id = "config_image_box" rows="1" cols="80">#{confim}</textarea><br>
+                               <input type="button" onclick="submit('config_image')" value="Submit">
+        </li>
+      </ul>
+  </body>
+</html>
