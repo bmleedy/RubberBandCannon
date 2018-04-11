@@ -23,10 +23,11 @@ for file in ${HTML_FILES}; do
 
   #Just escape the entire file
   cat ${HTML_FILENAME} | grep -v "^//" | sed 's/$/\\/' | sed 's/\"/\\\"/g' | sed "s/^[ \t]*//" >> ${HEADER_FILENAME}
-  echo "\";" >> ${HEADER_FILENAME}.hh
+  echo "\";" >> ${HEADER_FILENAME}
 
   #todo: at the "////" breakpoints, parse through the list of prefetch data and make an array of strings with the prefetch field per the example in config_website.html
 
+  echo ""  >> ${HEADER_FILENAME}
   echo "#endif"  >> ${HEADER_FILENAME}
 
 done
