@@ -121,8 +121,8 @@ bool ESP8266::setup_device(){
     
     Serial.print(F("ESP8266 - Checking the device CWMODE..."));
     // Set myself up as a client of an access point.
-    sprintf_P(request_buffer, PSTR("AT+CWMODE?\r\n"));
-    sprintf_P(response_buffer,PSTR("+CWMODE:1"));
+    snprintf_P(request_buffer, COMMAND_BUFFER_SIZE,PSTR("AT+CWMODE?\r\n"));
+    snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("+CWMODE:1"));
     if(expect_response_to_command(request_buffer,
                                   strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                   response_buffer,
@@ -130,8 +130,8 @@ bool ESP8266::setup_device(){
         Serial.println(F("[OK]"));
     } else {
         Serial.print (F("\nESP8266 -    Setting the mode to 'client mode'"));
-        sprintf_P(request_buffer, PSTR("AT+CWMODE=1\r\n"));
-        sprintf_P(response_buffer,PSTR("OK"));
+        snprintf_P(request_buffer, COMMAND_BUFFER_SIZE,PSTR("AT+CWMODE=1\r\n"));
+        snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("OK"));
         if(expect_response_to_command(request_buffer,
                                       strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                       response_buffer,
@@ -146,8 +146,8 @@ bool ESP8266::setup_device(){
     
     // Now join the house access point
     Serial.print(F("ESP8266 - Checking that we are on the correct network..."));
-    sprintf_P(request_buffer, PSTR("AT+CWJAP?\r\n"));
-    sprintf_P(response_buffer,PSTR("+CWJAP:\"%s\""),station.ssid);
+    snprintf_P(request_buffer, COMMAND_BUFFER_SIZE,PSTR("AT+CWJAP?\r\n"));
+    snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("+CWJAP:\"%s\""),station.ssid);
     if(expect_response_to_command(request_buffer,
                                   strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                   response_buffer,
@@ -155,8 +155,8 @@ bool ESP8266::setup_device(){
         Serial.println(F("[OK]"));
     } else {
         Serial.print (F("\nESP8266 -     Not on the correct network.  Changing the WiFi settings to join network..."));
-        sprintf_P(request_buffer, PSTR("AT+CWJAP=\"%s\",\"%s\"\r\n"),station.ssid,station.password);
-        sprintf_P(response_buffer,PSTR("OK"));
+        snprintf_P(request_buffer, COMMAND_BUFFER_SIZE,PSTR("AT+CWJAP=\"%s\",\"%s\"\r\n"),station.ssid,station.password);
+        snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("OK"));
         if(expect_response_to_command(request_buffer,
                                       strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                       response_buffer,
@@ -172,8 +172,8 @@ bool ESP8266::setup_device(){
     
     // Set ourselves up to mux connections into our little server
     Serial.print(F("ESP8266 - Checking the CIPMUX Settings..."));
-    sprintf_P(request_buffer, PSTR("AT+CIPMUX?\r\n"));
-    sprintf_P(response_buffer,PSTR("+CIPMUX:1"));
+    snprintf_P(request_buffer, COMMAND_BUFFER_SIZE,PSTR("AT+CIPMUX?\r\n"));
+    snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("+CIPMUX:1"));
     if(expect_response_to_command(request_buffer,
                                   strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                   response_buffer,
@@ -181,8 +181,8 @@ bool ESP8266::setup_device(){
         Serial.println(F("[OK]"));
     } else {
         Serial.print (F("\nESP8266 -    Server not enabled yet. Setting CIPMUX=1..."));
-        sprintf_P(request_buffer, PSTR("AT+CIPMUX=1\r\n"));
-        sprintf_P(response_buffer,PSTR("OK"));
+        snprintf_P(request_buffer, COMMAND_BUFFER_SIZE,PSTR("AT+CIPMUX=1\r\n"));
+        snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("OK"));
         if(expect_response_to_command(request_buffer,
                                       strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                       response_buffer,
@@ -198,8 +198,8 @@ bool ESP8266::setup_device(){
 
     // Now setup the CIP Server
     Serial.print(F("ESP8266 - Setting server maxconns..."));
-    sprintf_P(request_buffer, PSTR("AT+CIPSERVERMAXCONN=%d\r\n"),server.maxconns);
-    sprintf_P(response_buffer,PSTR("OK"));
+    snprintf_P(request_buffer, COMMAND_BUFFER_SIZE,PSTR("AT+CIPSERVERMAXCONN=%d\r\n"),server.maxconns);
+    snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("OK"));
     if(expect_response_to_command(request_buffer,
                                   strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                   response_buffer,
@@ -213,8 +213,8 @@ bool ESP8266::setup_device(){
     
     // Now setup the CIP Server
     Serial.print(F("ESP8266 - Configuring my server on port 8080..."));
-    sprintf_P(request_buffer, PSTR("AT+CIPSERVER=1,%d\r\n"),server.port);
-    sprintf_P(response_buffer,PSTR("OK"));
+    snprintf_P(request_buffer, COMMAND_BUFFER_SIZE,PSTR("AT+CIPSERVER=1,%d\r\n"),server.port);
+    snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("OK"));
     if(expect_response_to_command(request_buffer,
                                   strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                   response_buffer,
@@ -229,18 +229,25 @@ bool ESP8266::setup_device(){
 
 
 /* send_output_queue()
+ *  
  *  Send the contents of my output queue to a specific channel
+ *  
  */
 void ESP8266::send_output_queue(unsigned char channel){
-    const char loc_write_buf_len = 25;
     // Command the esp to listen for n bytes of data
-    char write_command_string[loc_write_buf_len];
-    snprintf_P((write_command_string),loc_write_buf_len,PSTR("AT+CIPSEND=%d,%d\r\n"),
-                                                         channel,
-                                                         output_queue.get_total_size());
-    write_port(write_command_string,strlen(write_command_string));
+    char write_command_string[COMMAND_BUFFER_SIZE];
+    char response_buffer[COMMAND_BUFFER_SIZE];
+    
+    // Put the ESP int send mode
+    snprintf_P(write_command_string, COMMAND_BUFFER_SIZE, 
+                                     PSTR("AT+CIPSEND=%d,%d\r\n"),
+                                     channel);
+    write_port(write_command_string,strnlen(write_command_string,COMMAND_BUFFER_SIZE));
+
+    // Wait a bit to let it get ready
     delay(20);
 
+    // Write all of the elements in my output queue
     string_element data_to_write;
     //while we can retrieve things from the output queue
     while(output_queue.get_element(&data_to_write)){
@@ -255,23 +262,31 @@ void ESP8266::send_output_queue(unsigned char channel){
     }
     
     // Send the command to terminate the data stream, 
-    //   even though it should have been terminated based on length.
-    write_port((char *)"+++\r\n",5);
+    //  even though it should have been terminated based on length.
+    write_port((char *)"++++++\r\n",8);
 
     // Wait 500 ms before sending any other command, per the Espressif ICD, this should be 1s
     delay(500); 
     
-    // Now close the connection  
-    // todo: this is hacky - just crushes all connections.
-    snprintf_P((write_command_string),loc_write_buf_len,PSTR("AT+CIPCLOSE=%d\r\n"),
-                                                           channel);
-    write_port(write_command_string,strlen(write_command_string));
-    // todo: validate that these commands actually worked.  Right now they're open loop.
+    // Now close the connection, printing a warning if I don't see an "OK" in response
+    snprintf_P(write_command_string, COMMAND_BUFFER_SIZE, PSTR("AT+CIPCLOSE=%d\r\n"),channel);
+    snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("OK"));
+    if(expect_response_to_command(write_command_string,
+                                  strnlen(write_command_string,COMMAND_BUFFER_SIZE),
+                                  response_buffer,
+                                  strnlen(response_buffer,COMMAND_BUFFER_SIZE))){
+        //Closed successfully - no action needed
+    } else {
+        //Print a warning - if this happens often, potentially put this into a loop to make sure we close channels
+        Serial.print(F("| WARNING Failed to close connection to the ESP8266 on channel ")); Serial.println(channel,DEC);
+    }
 }
 
 
 /* send_http_200_static()
+ *  
  *  Send a static website as an HTTP 200 response.
+ *  
  */
 void ESP8266::send_http_200_static(unsigned char channel, char page_data[], unsigned int page_data_len){
 
