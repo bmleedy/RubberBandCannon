@@ -302,6 +302,98 @@ void ESP8266::send_http_200_static(unsigned char channel, char page_data[], unsi
   this->send_output_queue(channel);
 }
 
+/* send_http_200_with_prefetch()
+ *  
+ *  Sends an http 200 response, populating a javascript map variable 
+ *    with data fetched about the device's configuration.  This was 
+ *    created for the config page, which should display the current settings
+ *    when you load the page.
+ *  
+ */
+void ESP8266::send_http_200_with_prefetch(unsigned char channel,
+                                          char page_data_0[], unsigned int page_data_0_len,
+                                          char page_data_2[], unsigned int page_data_2_len,
+                                          const char prefetch_data_fields[][7], unsigned int num_prefetch_data_fields){
+
+  // start-line per https://tools.ietf.org/html/rfc2616#page-31 
+  this->output_queue.add_element((char *)http_200_start_line, HTTP_200_START_LINE_LEN, true);
+
+  // todo: add content-length header
+
+  // Now enqueue the first section of website page data (in progmem)
+  this->output_queue.add_element(page_data_0, page_data_0_len,true);
+
+  // Add each field to a prefetch buffer, that I'll put in the output queue
+  strncpy_P(prefetch_output_buffer,PSTR("//begin prefetched data\n"),PREFETCH_OUTPUT_BUFFER_SIZE);
+
+  // For each prefetch data field, find the matching data and add it
+  //   to the buffer string.
+  prefetch_output_buffer_len = 0; //clear the output buffer
+  bool have_queried_mac = false;  //only queried to get mac and IP
+  int buffer_size_remaining = PREFETCH_OUTPUT_BUFFER_SIZE;
+  for(int i=0; i<num_prefetch_data_fields; i++){
+
+    // check
+    buffer_size_remaining = PREFETCH_OUTPUT_BUFFER_SIZE - prefetch_output_buffer_len;
+    if(buffer_size_remaining < 20){
+      Serial.println(F("| WARNING: prefetch output buffer is running out of space!"));
+    }
+    
+    if(strstr_P(prefetch_data_fields[i], PSTR("ssid__"))){
+      this->query_network_ssid();
+      snprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len),
+                  buffer_size_remaining,
+                  "%s:%s,\n",
+                  prefetch_data_fields[i],
+                  station.ssid);
+      prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
+    } else if(strstr_P(prefetch_data_fields[i], PSTR("conctd"))){
+      if(this->is_network_connected()){
+        snprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len),
+                    buffer_size_remaining,
+                    PSTR("conctd:true,\n"));
+      } else {
+        snprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len), 
+                   buffer_size_remaining,
+                   PSTR("conctd:false,\n"));
+      }
+      prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
+    }else if( (strstr_P(prefetch_data_fields[i], PSTR("ipaddr")) ||
+              strstr_P(prefetch_data_fields[i], PSTR("macadr"))) && !have_queried_mac){
+      this->query_ip_and_mac();
+      have_queried_mac = true; //only do one query to refresh IP and mac
+      //todo: make this an add_string_to_buffer method
+      snprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len), 
+                  buffer_size_remaining,
+                  PSTR("ipaddr:%s,\n"),station.ip);
+      prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
+      snprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len),
+                  buffer_size_remaining,
+                  PSTR("macaddr:%s,\n"),station.macaddr);
+      prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
+    }else if(strstr_P(prefetch_data_fields[i], PSTR("port__"))){
+      //todo: make this an add_int_to_buffer method
+      snprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len), 
+                 buffer_size_remaining,
+                 PSTR("port__:%d,\n"),server.port);
+      prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
+    }else{
+      Serial.print(F("Prefetch field not found: "));Serial.write(prefetch_data_fields[i],7);
+    } 
+  }//for(prefetch_data_fields)
+  this->output_queue.add_element(prefetch_output_buffer, prefetch_output_buffer_len, false);
+
+  // Add the last chunk of website page data
+  this->output_queue.add_element(page_data_2, page_data_2_len,true);
+  
+  // Send!
+  this->send_output_queue(channel);
+}
+
+
+
+
+
 void ESP8266::query_network_ssid(){
   char input_buffer[50] = "";
   unsigned int timeout_ms = 10000;
@@ -396,63 +488,7 @@ void ESP8266::query_ip_and_mac(){
   Serial.println(F("Response timed out"));
 }
 
-void ESP8266::send_http_200_with_prefetch(unsigned char channel,
-                                          char page_data_0[], unsigned int page_data_0_len,
-                                          char page_data_2[], unsigned int page_data_2_len,
-                                          const char prefetch_data_fields[][7], unsigned int num_prefetch_data_fields){
-  int total_page_size = 0;
 
-  // start-line per https://tools.ietf.org/html/rfc2616#page-31 
-  this->output_queue.add_element((char *)http_200_start_line, HTTP_200_START_LINE_LEN, true);
-
-  // Now enqueue the website page data
-  this->output_queue.add_element(page_data_0, page_data_0_len,true);
-
-  // Add each field to a prefetch buffer, that I'll put in the output queue
-  prefetch_output_buffer_len = 0;  //reset the output buffer
-  strncpy_P(prefetch_output_buffer,PSTR("//begin prefetched data\n"),PREFETCH_OUTPUT_BUFFER_SIZE);
-  prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
-  bool have_queried_mac = false;
-  for(int i=0; i<num_prefetch_data_fields; i++){
-    //todo: add safety to not add to full buffer
-    //todo: add support for all fields
-    if(strstr_P(prefetch_data_fields[i], PSTR("ssid__"))){
-      this->query_network_ssid();
-      sprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len), 
-      "%s:%s,\n",prefetch_data_fields[i],station.ssid);
-      prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
-    } else if(strstr_P(prefetch_data_fields[i], PSTR("conctd"))){
-      if(this->is_network_connected()){
-        sprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len), PSTR("conctd:true,\n"));
-      } else {
-        sprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len), PSTR("conctd:false,\n"));
-      }
-      prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
-    }else if( (strstr_P(prefetch_data_fields[i], PSTR("ipaddr")) ||
-              strstr_P(prefetch_data_fields[i], PSTR("macadr"))) && !have_queried_mac){
-      this->query_ip_and_mac();
-      have_queried_mac = true; //only do one query to refresh IP and mac
-      //todo: make this an add_string_to_buffer method
-      sprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len), PSTR("ipaddr:%s,\n"),station.ip);
-      prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
-      sprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len), PSTR("macaddr:%s,\n"),station.macaddr);
-      prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
-    }else if(strstr_P(prefetch_data_fields[i], PSTR("port__"))){
-      //todo: make this an add_int_to_buffer method
-      sprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len), PSTR("port__:%d,\n"),server.port);
-      prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
-      //todo: add debugging for buffer adds
-    }else{
-      Serial.print(F("Prefetch field not found: "));Serial.write(prefetch_data_fields[i],7);
-    } 
-  }
-
-  // Add the last chunk of website page data
-  this->output_queue.add_element(page_data_2, page_data_2_len,true);
-  
-  // Send!
-  this->send_output_queue(channel);
-}
 
 void ESP8266::write_port(char * write_string, unsigned int len){
   //write to port here
