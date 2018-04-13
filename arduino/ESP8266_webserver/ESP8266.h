@@ -94,9 +94,7 @@ public:
   CircularBuffer(int buf_size);
   void buf_reset();
   bool buf_put(char data);
-  int buf_put_multiple(char data, unsigned int n);//not yet implemented
   bool buf_get(char * data);
-  int buf_get_multiple(char * destination, unsigned int n);//not yet implemented
   bool is_empty();
   bool is_full();
   void read_buffer_to_string(char string[]);

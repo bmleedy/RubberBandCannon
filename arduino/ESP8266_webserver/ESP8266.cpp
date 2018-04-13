@@ -608,9 +608,6 @@ bool CircularBuffer::buf_put(char data){
 }
 
 
-int CircularBuffer::buf_put_multiple(char data, unsigned int n){} //todo: implement me
-
-
 //returns true if the buffer had a value to get
 bool CircularBuffer::buf_get(char * data){
     bool r = false;
@@ -625,9 +622,6 @@ bool CircularBuffer::buf_get(char * data){
     return r;
 }
 
-
-//returns the number of values gotten, up to n
-int CircularBuffer::buf_get_multiple(char * destination, unsigned int n){}//todo: implement me
 
 //returns true if the buffer's empty
 bool CircularBuffer::is_empty(){
