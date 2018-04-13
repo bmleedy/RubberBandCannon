@@ -14,20 +14,22 @@
  ------------------------------------------------------------------------------*/
 #include "ESP8266.h"
 
-//todo: in setup, set AT+CIPSERVERMAXCONN to only allow one connection (must do before creating the server)
-
-// Constructor: SoftwareSerial port must be initialized
+/* ESP8266()
+ * Constructor: SoftwareSerial port must already be initialized 
+ */
 ESP8266::ESP8266(AltSoftSerial *port, bool verbose){
-  this->port = port;
+  this->port = port;  //serial port
   serial_input_buffer = new CircularBuffer(SERIAL_INPUT_BUFFER_MAX_SIZE);
-  this->setup_device();
   this->verbose = verbose;
-  this->dump_reads = false;
-  this->dump_writes= false;
-  sprintf_P(station.ssid,PSTR("leedy"));
-  sprintf_P(station.password,PSTR("teamgoat"));
+  this->dump_reads = this->verbose;
+  this->dump_writes= this->verbose;
+  //todo: load the following values from eeprom instead of hard-coded defaults
+  sprintf_P(station.ssid,PSTR("leedy"));         //default SSID
+  sprintf_P(station.password,PSTR("teamgoat"));  //default password
   this->server.port = DEFAULT_PORT;
   this->server.maxconns = DEFAULT_MAXCONNS;
+
+  this->setup_device();
 }
 
 /* read_line() 
@@ -74,29 +76,28 @@ void ESP8266::clear_buffer(){
  *  Used for setting up the ESP8266
  */
 bool ESP8266::expect_response_to_command(const char * command, unsigned int command_len,
-                                const char * response, unsigned int response_len,
+                                const char * desired_response, unsigned int response_len,
                                 unsigned int timeout_ms){
-  char input_buffer[100] = "";
+  char response_line[MAX_RESPONSE_LINE_LEN] = "";
 
   // Write the command
   this->port->write(command, command_len);
   
   // Spin for timeout_ms
   unsigned int start_time = millis();
-  char rv = -1;
-  int bytes_received = 0;
   while((millis() - start_time) < timeout_ms){
-    // Read 1 char off the serial port.
-    rv = read_port();
-    if (rv != -1) {
-      input_buffer[bytes_received] = rv;
-      input_buffer[bytes_received+1] = '\0';
-      bytes_received++;
-      if(strstr(input_buffer,response) != NULL) {
+    if(this->read_line(response_line)){
+      // a line is found
+      if(strstr(response_line,desired_response) != NULL) {
+        //line has response string, return success
         return true;
+      } else {
+        // line does not have response string
+        // continue reading more lines
       }
-    }//if(rv != 1)
+    }//if(read_line)
   }//while(millis...)
+  
   Serial.println(F("Response timed out"));
   return false;
 }
@@ -424,24 +425,19 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
               strstr_P(prefetch_data_fields[i], PSTR("macadr"))) && !have_queried_mac){
       this->query_ip_and_mac();
       have_queried_mac = true; //only do one query to refresh IP and mac
+      //todo: make this an add_string_to_buffer method
       sprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len), PSTR("ipaddr:%s,\n"),station.ip);
       prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
       sprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len), PSTR("macaddr:%s,\n"),station.macaddr);
       prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
+    }else if(strstr_P(prefetch_data_fields[i], PSTR("port__"))){
+      //todo: make this an add_int_to_buffer method
+      sprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len), PSTR("port__:%d,\n"),server.port);
+      prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
+      //todo: add debugging for buffer adds
     }else{
       Serial.print(F("Prefetch field not found: "));Serial.write(prefetch_data_fields[i],7);
-    }
-/*
-"port__",
-"tgt_im",
-"confim",
-"dbg_bd",
-"esp_bd",
-
-   
-    prefetch_data(prefetch_data_fields[i],
-    prefetch_output_buffer_len
-*/    
+    } 
   }
 
   // Add the last chunk of website page data

@@ -9,6 +9,7 @@
 
 #define SERIAL_INPUT_BUFFER_MAX_SIZE 300  //maximum line length that I can handle
 #define PREFETCH_OUTPUT_BUFFER_SIZE  100
+#define MAX_RESPONSE_LINE_LEN 50          //the longest single line we expect in a response, including "\r\n\0"
 #define MAX_OUTPUT_QUEUE_LENGTH  20       //number of pointers to strings I'll store
 #define MAX_SSID_LENGTH 32  //number of characters, not counting string null terminator
 #define MAX_PASSWORD_LENGTH 32 //number of characters, not counting string null terminator
@@ -160,7 +161,7 @@ public:
     
 private:
     bool expect_response_to_command(const char * command, unsigned int command_len,
-                                    const char * response, unsigned int response_len,
+                                    const char * desired_response, unsigned int response_len,
                                     unsigned int timeout_ms=2000);
     bool setup_device();
     void send_output_queue(unsigned char channel);
