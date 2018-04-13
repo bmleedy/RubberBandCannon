@@ -442,49 +442,46 @@ bool ESP8266::is_network_connected(){
                                   strnlen(response_buffer,COMMAND_BUFFER_SIZE));
 }
 
+/* query_ip_and_mac()
+ *  
+ *  Make a call to the ESP8266 serial port to get the current station
+ *    IP address and MAC address.  Save these in the class variables
+ *    as my current station ip and MAC.
+ *  
+ */
+
 void ESP8266::query_ip_and_mac(){
-  char input_buffer[50] = "";
+  char input_buffer[MAX_RESPONSE_LINE_LEN] = "";
   unsigned int timeout_ms = 2000;
+  char * read_pointer = NULL;
 
   // Write the command
   this->port->print(F("AT+CIFSR\r\n"));
-  
-  // Spin for timeout_ms
+
   unsigned int start_time = millis();
-  char rv = -1;
-  int bytes_received = 0;
   while((millis() - start_time) < timeout_ms){
-    char * read_pointer;
-    // Read 1 char off the serial port.
-    rv = read_port();
-    //todo: make sure this doesn't run over the edge of the input buffer
-    if (rv != -1) {
-      input_buffer[bytes_received] = rv;
-      input_buffer[bytes_received+1] = '\0';
-      bytes_received++;
-      if(strstr_P(input_buffer,PSTR("\r\n")) != NULL) {
-        //we have found an end-of-line
+    if(this->read_line(input_buffer)){
+      // a line is found
+      if(strstr_P(input_buffer,PSTR("+CWJAP")) != NULL) {
         if(strstr_P(input_buffer,PSTR("STAIP")) != NULL){
           //IP Address is on this line, parse out the strings
           read_pointer = strtok(input_buffer,"\""); //up to the start of the IP Address
           read_pointer = strtok(NULL,"\""); //the SSID field
           strncpy(station.ip, read_pointer, IP_ADDRESS_LENGTH); //copy into my ip string
-          return; //done.  return before I time out.
         } else if(strstr_P(input_buffer,PSTR("STAMAC")) != NULL){
                     //Response is on this line, parse out the strings
           read_pointer = strtok(input_buffer,"\""); //up to the start of the SSID
           read_pointer = strtok(NULL,"\""); //the SSID field
           strncpy(station.macaddr, read_pointer, MAC_ADDRESS_LENGTH); //copy into my macaddr string
-          return; //done.  return before I time out.
+          return; //done.  return before I time out. (this value should come last
         } 
-          else {
-          //line does not contain my response, start over
-          bytes_received = 0;
-        }
+      } else {
+        // line does not have response string
+        // continue reading more lines
       }
-    }//if(rv != 1)
-  }//while(millis...)
-  Serial.println(F("Response timed out"));
+    }
+  }
+  Serial.println(F("| IP and mac Response timed out"));
 }
 
 
