@@ -484,8 +484,11 @@ void ESP8266::query_ip_and_mac(){
   Serial.println(F("| IP and mac Response timed out"));
 }
 
-
-
+/* write_port()
+ * 
+ * Simply writes to the ESP serial port, with logging if needed.
+ * 
+ */
 void ESP8266::write_port(char * write_string, unsigned int len){
   //write to port here
   this->port->write(write_string, len);
@@ -493,6 +496,11 @@ void ESP8266::write_port(char * write_string, unsigned int len){
     Serial.write(write_string,len);
 }
 
+/* read_port()
+ * 
+ * Simply reads from the ESP serial port, with logging if needed.
+ * 
+ */
 char ESP8266::read_port(){
   char rv = this->port->read();
   if(this->dump_reads)
