@@ -290,20 +290,12 @@ void ESP8266::send_output_queue(unsigned char channel){
  */
 void ESP8266::send_http_200_static(unsigned char channel, char page_data[], unsigned int page_data_len){
 
-  int total_page_size = 0;
-
-  //todo: add Content_Length header so I don't have to close the connection. 
-  //      Or, maybe I want to close the connection anyway.
-  // https://www.w3.org/Protocols/HTTP/Response.html
-
-  // start-line per https://tools.ietf.org/html/rfc2616#page-31 
+  // Add start-line per https://tools.ietf.org/html/rfc2616#page-31 
   this->output_queue.add_element((char *)http_200_start_line, HTTP_200_START_LINE_LEN, true);
 
-  //content-length header
-  //this->output_queue.add_element(PSTR("Content-Length: 1947\r\n\r\n"),24,true);
-  //todo: put in content length header
+  //todo: add Content_Length header so I don't have to close the connection forcibly
 
-  // Now enqueue the website page data
+  // Now enqueue the website page data, which is stored in progmem
   this->output_queue.add_element(page_data, page_data_len,true);
   
   // Send!
