@@ -8,8 +8,17 @@
 #include "webserver_constants.h"
 
 #define SERIAL_INPUT_BUFFER_MAX_SIZE 300  //maximum line length that I can handle
+#define PREFETCH_OUTPUT_BUFFER_SIZE  100
 #define MAX_OUTPUT_QUEUE_LENGTH  20       //number of pointers to strings I'll store
+#define MAX_SSID_LENGTH 32  //number of characters, not counting string null terminator
+#define MAX_PASSWORD_LENGTH 32 //number of characters, not counting string null terminator
+#define COMMAND_BUFFER_SIZE 50 //size of buffer used for constructing commands to the ESP8266
+#define MAC_ADDRESS_LENGTH 17  //size of MAC address string, not including null terminator e.g. "DE:AD:BE:EF:AB:BA"
+#define IP_ADDRESS_LENGTH 12   //size of ip address string, not including null terminator e.g. 192.168.320.089"
+#define DEFAULT_PORT 8080      //server listens on this port by default
+#define DEFAULT_MAXCONNS 1     //allow this many incoming connections at once
 
+//todo: put config page values in eeprom (instead of just loading defaults at start.
 
 /*-----------------------------------------------------------------
  * OutputQueue
@@ -112,6 +121,17 @@ public:
  *                                   sizeof(static_website_text));
  *}
  ---------------------------------------------------------------*/
+struct network_info{
+  char ssid[MAX_SSID_LENGTH+1];
+  char password[MAX_PASSWORD_LENGTH+1];
+  char ip[IP_ADDRESS_LENGTH+1];
+  char macaddr[MAC_ADDRESS_LENGTH+1];
+};
+
+struct server_info{
+  unsigned int port;
+  unsigned char maxconns;
+};
 
 class ESP8266{
 private:
@@ -120,10 +140,21 @@ private:
     CircularBuffer * serial_input_buffer; //todo: Replace with char ring buffer
     bool verbose;               
     OutputQueue output_queue;   //Does not hold data, just pointers to data
-    
+    char prefetch_output_buffer[PREFETCH_OUTPUT_BUFFER_SIZE];
+    unsigned int prefetch_output_buffer_len;
+    network_info station;
+    server_info server;
+    void query_network_ssid();
+    void query_ip_and_mac();
+    bool is_network_connected();
+
 public:
     ESP8266(AltSoftSerial *port, bool verbose);
     void send_http_200_static(unsigned char channel,char page_data[],unsigned int page_data_len);
+    void send_http_200_with_prefetch(unsigned char channel,char page_data_0[], unsigned int page_data_0_len,
+                                                           char page_data_2[], unsigned int page_data_2_len,
+                                                           const char prefetch_data_fields[][7], unsigned int num_prefetch_data_fields);
+
     bool read_line(char line_buffer[]);
     void clear_buffer();
     

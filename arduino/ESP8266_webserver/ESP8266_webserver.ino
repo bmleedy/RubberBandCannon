@@ -151,7 +151,16 @@ void loop() {
 
     if(strstr_P(input_line,PSTR("GET")) != NULL){
       Serial.print(F("|  GET received on channel ")); Serial.println(channel);
-      esp->send_http_200_static(channel,(char *)static_website_text_0,(sizeof(static_website_text_0)-1));
+      if(strstr_P(input_line,PSTR("/config"))){
+        //config page has been requested
+        Serial.print(F("|     config page requested"));
+        esp->send_http_200_with_prefetch(channel,(char *)config_website_text_0,(sizeof(static_website_text_0)-1),
+                                        (char *)config_website_text_2,(sizeof(static_website_text_2)-1),
+                                        config_website_prefetch, (sizeof(config_website_prefetch) / sizeof(config_website_prefetch[0])));
+      } else {
+        Serial.print(F("|     targeting page requested"));
+        esp->send_http_200_static(channel,(char *)static_website_text_0,(sizeof(static_website_text_0)-1));      
+      }
       Serial.print(F("'| Free: "));Serial.println(mu_freeRam());
     }else {
       if(strstr_P(input_line,PSTR("POST")) != NULL){

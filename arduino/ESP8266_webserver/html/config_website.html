@@ -34,36 +34,6 @@
                               <input type="button" onclick="submit('password')" value="Submit">
         </li>
       </ul>
-    <h1>Serial Ports</h1>
-      <ul>
-        <li>New Debug Serial Baud:  <select class="dbg_bd">
-                                      <option value="57600">57600</option>
-                                      <option value="38400">38400</option>
-                                      <option value="19200">19200</option>
-                                      <option value="9600">9600</option>
-                                      <option value="4800">4800</option>
-	                            </select>
-                                    <input type="button" onclick="submit('debug_serial')" value="Submit">
-        </li> 
-        <li>New ESP Serial Baud:  <select class="esp_bd">
-                                    <option value="57600">57600</option>
-                                    <option value="38400">38400</option>
-                                    <option value="19200">19200</option>
-                                    <option value="9600" >9600</option>
-                                    <option value="4800" >4800</option>
-                                  </select> 
-                                  <input type="button" onclick="submit('esp_serial')" value="Submit">
-        </li>
-      </ul>
-    <h1>Appearance</h1>
-      <ul>
-        <li>Targeting page image:<textarea class="tgt_im" rows="1" cols="80">#{tgt_im}</textarea><br>
-                                 <input type="button" onclick="submit('targeting_image')" value="Submit">
-        </li>
-        <li>Config page image: <textarea class="confim" rows="1" cols="80">#{confim}</textarea><br>
-                               <input type="button" onclick="submit('config_image')" value="Submit">
-        </li>
-      </ul>
   </body>
   <footer>
     <script language="javascript">
@@ -78,15 +48,6 @@
                            port__:8080,
                            tgt_im:"https://s3-us-west-2.amazonaws.com/rubberbandcannon/rubberband.jpg",
                            confim:"https://cdn.pixabay.com/photo/2014/10/03/17/16/gear-472006_1280.jpg",
-                           dbg_bd:"19200",
-                           esp_bd:"9600"
-//    example generated data:
-//    const char config_website_text_0 PROGMEM = "<section above this comment>"
-//    const char PROGMEM config_website_prefetch[][7] = {"ssid__","concd","ipaddr",
-//                                                       "macaddr","port__","tgt_im",
-//                                                       "confim","dbg_bd","esp_bd");
-//    const int  config_website_prefetch_len = 9;  //number of strings to prefetch
-//    const char config_website_text_1 PROGMEM = "<section below this comment>"
 //FETCHDATA_END
       };
 //    //change content or values for tags with prefetch classes
