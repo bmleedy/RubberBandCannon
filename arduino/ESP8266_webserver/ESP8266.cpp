@@ -359,7 +359,7 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
       }
       prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
     }else if( (strstr_P(prefetch_data_fields[i], PSTR("ipaddr")) ||
-              strstr_P(prefetch_data_fields[i], PSTR("macadr"))) && !have_queried_mac){
+              strstr_P(prefetch_data_fields[i],  PSTR("macadr"))) && !have_queried_mac){
       this->query_ip_and_mac();
       have_queried_mac = true; //only do one query to refresh IP and mac
       //todo: make this an add_string_to_buffer method
@@ -391,47 +391,46 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
 }
 
 
-
-
-
+/* query_network_ssid()
+ *  
+ *  Make a call to the ESP8266 to get my own SSID and update my internal
+ *    class variables with the values I read.
+ * 
+ */
 void ESP8266::query_network_ssid(){
-  char input_buffer[50] = "";
+  char input_buffer[MAX_RESPONSE_LINE_LEN] = "";
   unsigned int timeout_ms = 10000;
+  char * read_pointer = NULL;
 
   // Write the command
   this->port->print(F("AT+CWJAP_CUR?\r\n"));
-  
-  // Spin for timeout_ms
+
+  // Read lines from the ESP8266 until we time out or succeed
   unsigned int start_time = millis();
-  char rv = -1;
-  int bytes_received = 0;
   while((millis() - start_time) < timeout_ms){
-    char * read_pointer;
-    // Read 1 char off the serial port.
-    rv = read_port();
-    //todo: make sure this doesn't run over the edge of the input buffer
-    if (rv != -1) {
-      input_buffer[bytes_received] = rv;
-      input_buffer[bytes_received+1] = '\0';
-      bytes_received++;
-      if(strstr_P(input_buffer,PSTR("\r\n")) != NULL) {
-        //we have found an end-of-line
-        if(strstr_P(input_buffer,PSTR("+CWJAP")) == NULL){
-          //line does not contain my response, start over
-          bytes_received = 0;
-        } else {
+    if(this->read_line(input_buffer)){
+      // a line is found
+      if(strstr_P(input_buffer,PSTR("+CWJAP")) != NULL) {
           //Response is on this line, parse out the strings
           read_pointer = strtok(input_buffer,"\""); //up to the start of the SSID
           read_pointer = strtok(NULL,"\""); //the SSID field
           strncpy(station.ssid, read_pointer, MAX_SSID_LENGTH); //copy into my SSID string
           return; //done.  return before I time out.
-        }
+      } else {
+        // line does not have response string
+        // continue reading more lines
       }
-    }//if(rv != 1)
+    }//if(read_line)
   }//while(millis...)
+  
   Serial.println(F("Response timed out"));
 }
 
+/* is_network_connected()
+ * 
+ * Make a call to the ESP8266 serial port and check that it responds happily
+ * 
+ */
 bool ESP8266::is_network_connected(){
   char request_buffer[COMMAND_BUFFER_SIZE];
   char response_buffer[COMMAND_BUFFER_SIZE];
