@@ -20,18 +20,18 @@
         <li>IP Address: <span class="ipaddr"></span></li>
         <li>MAC Address: <span class="macadr"></span></li>
         <li>Port: <span class="port__"></span></li>
-        <li>Link to targeting page: http://<span class="ipaddr"></span>:<span class="port__"></span></li>
+        <li id="targeting_link">Link to targeting page: http://<span class="ipaddr"></span>:<span class="port__"></span></li>
         <li><input type="button" onclick="fetchNetworks()" value="Fetch Networks">
             <p id="network_list">Click "Fetch Networks" to fill this list.</p>
         </li>
       </ul>
     <h1>Network Setup</h1>
       <ul>
-        <li>New WiFi SSID:<input class="ssid__" id="ssid_box" type="text" size="15">
-                          <input type="button" onclick="submit('ssid')" value="Submit">
+        <li>New WiFi SSID: <input class="ssid__" id="ssid_box" type="text" size="15"></input>
+                           <input type="button" onclick="submitchange('ssid__')" value="Submit"></input>
         </li>
-        <li>Set WiFi Password:<input id="paswrd_box" type="password" size="15">
-                              <input type="button" onclick="submit('password')" value="Submit">
+        <li>Set WiFi Password: <input class="paswrd" type="password" size="15"></input>
+                               <input type="button" onclick="submitchange('paswrd')" value="Submit"></input>
         </li>
       </ul>
   </body>
@@ -52,7 +52,7 @@
       };
 //    //change content or values for tags with prefetch classes
       function render_prefetch(key,value){
-        console.log("prefetch called with name " + key);
+//      console.log("prefetch called with name " + key);
         fieldstofill = document.getElementsByClassName(key);
         for (var i=0; i < fieldstofill.length; i++){
           if(fieldstofill[i].tagName.toLowerCase() == "span" ){
@@ -73,6 +73,23 @@
         var baseUrl = geturl.protocol + "//" + geturl.host + "/status/networks";
         $.get(baseUrl);
       }
+      function submitchange(form_id) {
+//      https://stackoverflow.com/questions/18169933/submit-form-without-reloading-page
+        console.log("submitting form " + form_id);
+        var http = new XMLHttpRequest();
+        http.open("POST", "settings/" + form_id, true);
+        http.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+        var params = form_id + "=" + document.getElementById(form_id).value;
+        http.send(params);
+        http.onload = function() {
+          alert(http.responseText);
+        }
+      }
+      function fetchNetworks() {
+        console.log("Fetching list of networks");
+      }
+      linkstring = "Link to targeting page";
+      document.getElementById("targeting_link").innerHTML = linkstring.link("http://" + prefetch_data.ipaddr + ":" + prefetch_data.port__);
     </script>
   </footer>
 </html>

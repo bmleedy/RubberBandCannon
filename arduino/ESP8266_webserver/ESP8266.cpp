@@ -62,6 +62,19 @@ bool ESP8266::read_line(char line_buffer[]){
 }
 
 
+bool ESP8266::read_line(char line_buffer[], unsigned int timeout_ms){
+  unsigned int start_time = millis();
+
+  while( (millis() - start_time) <= timeout_ms ){
+    if(read_line(line_buffer))
+      return true;
+    else
+      delay(2);  //chill for 2 ms
+  }
+}
+
+
+
 /* clear_buffer()
  *  Empty the input ring buffer.
  */
@@ -508,6 +521,117 @@ char ESP8266::read_port(){
   return rv;
 }
 
+
+/*set_station_ssid__()
+ * 
+ * Sends the command to set the SSID to the ESP8266 and returns true if it succeeds.
+ * 
+ */
+bool ESP8266::set_station_ssid__(char new_ssid[]){
+
+  char command_to_send[(MAX_SSID_LENGTH+MAX_PASSWORD_LENGTH+18)];
+  char desired_response[] = "OK";
+  unsigned int max_attempts = 3;
+  
+  strtok(new_ssid,"\n");//remove the \n on the ssid string
+
+  snprintf_P(command_to_send,
+             (MAX_SSID_LENGTH+MAX_PASSWORD_LENGTH+18), 
+             PSTR("AT+CWJAP_DEF=%s,%s\r\n"), 
+             new_ssid, 
+             this->station.password);
+  int i = 0;
+  for(int i=0; i<max_attempts; i++){
+    if(expect_response_to_command(command_to_send, 
+                                     strlen(command_to_send),
+                                     desired_response, 
+                                     strlen(desired_response),5000)){
+      //update my class variable
+      strncpy(this->station.ssid,new_ssid,MAX_SSID_LENGTH+1);
+      //return success
+      return true;
+    }else{
+      Serial.println(F("Attempt to set SSID failed"));
+    }
+  }
+  return false; //we timed out and did not succeed.
+}
+
+
+/*set_station_passwd()
+ * 
+ * Sends the command to set the password to the ESP8266 and returns true if it succeeds.
+ * 
+ */
+bool ESP8266::set_station_passwd(char new_password[]){
+  char command_to_send[(MAX_SSID_LENGTH+MAX_PASSWORD_LENGTH+18)];
+  char desired_response[] = "OK";
+  unsigned int max_attempts = 3;
+  
+  strtok(new_password,"\n");//remove the \n on the password string
+
+  snprintf_P(command_to_send,
+             (MAX_SSID_LENGTH+MAX_PASSWORD_LENGTH+18), 
+             PSTR("AT+CWJAP_DEF=%s,%s\r\n"), 
+             this->station.ssid, 
+             new_password);
+  int i = 0;
+  for(int i=0; i<max_attempts; i++){
+    if(expect_response_to_command(command_to_send, 
+                                     strlen(command_to_send),
+                                     desired_response, 
+                                     strlen(desired_response),5000)){
+      //update my class variable
+      strncpy(this->station.password,new_password,MAX_PASSWORD_LENGTH+1);
+      //return success
+      return true;
+    }else{
+      Serial.println(F("Attempt to set SSID failed"));
+    }
+  }
+  return false; //we timed out and did not succeed.
+}
+
+
+
+void ESP8266::send_networks_list(unsigned char channel){
+  char command_to_write[COMMAND_BUFFER_SIZE];
+  char response_line[MAX_RESPONSE_LINE_LEN];
+  
+  //Setup the access point list settings
+  snprintf_P(command_to_write,COMMAND_BUFFER_SIZE,PSTR("AT+CWLAPOPT=0,2\r\n"));
+  write_port(command_to_write,strnlen(command_to_write,COMMAND_BUFFER_SIZE));
+  
+  //Request the access point list
+  snprintf_P(command_to_write, COMMAND_BUFFER_SIZE,PSTR("AT+CWLAP\r\n"));
+  write_port(command_to_write,strnlen(command_to_write,COMMAND_BUFFER_SIZE));
+
+  //now, parse through till i see the my response
+  bool response_started = false;
+  unsigned int buffer_index = 0;
+  int buffer_size_remaining = PREFETCH_OUTPUT_BUFFER_SIZE;
+  while(true){
+    
+    //Check my space remaining
+    buffer_size_remaining = PREFETCH_OUTPUT_BUFFER_SIZE - prefetch_output_buffer_len;
+    if(buffer_size_remaining < 20){
+      Serial.println(F("| WARNING: prefetch output buffer is running out of space!"));
+    }
+
+    //Read a line and queue it up to send
+    read_line(response_line, 2000);
+    if(strstr_P(response_line,PSTR("+CWLAP")) != NULL){
+      response_started = true;
+      snprintf_P(prefetch_output_buffer+buffer_index,
+                 buffer_size_remaining,
+                 PSTR("%s\n"),
+                 response_line);
+      prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
+    } else if(response_started && strstr_P(response_line,PSTR("OK"))){
+      send_http_200_static(channel,prefetch_output_buffer,prefetch_output_buffer_len);
+    }
+  }//while()
+}
 /*-----------------------------------------------------------------
  * OutputQueue
  * 

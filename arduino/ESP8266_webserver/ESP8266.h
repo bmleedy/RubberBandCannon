@@ -153,9 +153,12 @@ public:
     void send_http_200_with_prefetch(unsigned char channel,char page_data_0[], unsigned int page_data_0_len,
                                                            char page_data_2[], unsigned int page_data_2_len,
                                                            const char prefetch_data_fields[][7], unsigned int num_prefetch_data_fields);
-
+    void send_networks_list(unsigned char channel);
     bool read_line(char line_buffer[]);
+    bool read_line(char line_buffer[], unsigned int timeout_ms);
     void clear_buffer();
+    bool set_station_ssid__(char new_ssid[]);
+    bool set_station_passwd(char new_password[]);
     
 private:
     bool expect_response_to_command(const char * command, unsigned int command_len,

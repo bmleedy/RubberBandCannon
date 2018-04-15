@@ -20,7 +20,7 @@ void Rubber_Band_Shooter::turn_up() {
   elevation_command_position = elevation_command_position + ELEVATION_POSITION_INCREMENT;
   if(elevation_command_position > (ELEVATION_CENTER_POSITION + ELEVATION_MOVEMENT_RANGE) ){
     elevation_command_position = (ELEVATION_CENTER_POSITION + ELEVATION_MOVEMENT_RANGE);
-    Serial.print("|Fixing elevation out-of-range elevation input!");Serial.println(elevation_command_position);
+    Serial.print(F("|Fixing elevation out-of-range elevation input!"));Serial.println(elevation_command_position);
   }
 
   elevation.write(map(elevation_command_position,0,180,MIN_PULSE_WIDTH,MAX_PULSE_WIDTH));
@@ -69,7 +69,7 @@ Rubber_Band_Shooter::Rubber_Band_Shooter(){
 
   small_stepper = new Stepper(STEPS_PER_REV, 2, 6, 10, 7);
 
-  Serial.println("Setup complete.  Running...");
+  Serial.println(F("Setup complete.  Running..."));
 }
 
 
@@ -89,5 +89,5 @@ Rubber_Band_Shooter::Rubber_Band_Shooter(unsigned char hammer_pin, unsigned char
 
   small_stepper = new Stepper(STEPS_PER_REV, 2, 6, 10, 7);
 
-  Serial.println("Setup complete.  Running...");
+  Serial.println(F("Setup complete.  Running..."));
 }

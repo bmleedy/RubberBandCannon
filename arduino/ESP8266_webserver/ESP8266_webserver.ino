@@ -119,8 +119,6 @@ void setup() {
 /*---------------------------------------------------------------
  * LOOP
  *-------------------------------------------------------------*/
-
-
 char get_channel(char line[], int len){
   char string_to_parse[len]; 
   strncpy(string_to_parse,line,len);
@@ -138,6 +136,46 @@ char get_channel(char line[], int len){
   
 }
 
+
+//todo: maybe pull this into the esp class
+//todo: make these more DRY
+void process_settings(unsigned char channel, char input_line[]) {
+  char* read_pointer = NULL;
+
+  // Read the remaining lines, until I find my parameter, or I time out:
+  if(strstr_P(input_line,PSTR("ssid__"))){
+    Serial.println(F("| received an SSID setting request"));
+    while(esp->read_line(input_line,1000)){
+      if(strstr_P,PSTR("ssid__=")){
+        //found the setting string
+        read_pointer = strtok(input_line,"="); //up to the start of the SSID
+        read_pointer = strtok(NULL,"="); //the SSID field
+        if(esp->set_station_ssid__(read_pointer)){
+          esp->send_http_200_static(channel,(char *)success_msg,(sizeof(success_msg)-1));
+        } else {
+          esp->send_http_200_static(channel,(char *)failure_msg,(sizeof(failure_msg)-1));
+        }
+      }//if(ssid)
+    }//while(read_line)
+  } else if(strstr_P(input_line,PSTR("passwd"))){
+    Serial.println(F("| received a password setting request"));
+    while(esp->read_line(input_line,1000)){
+      if(strstr_P,PSTR("passwd=")){
+        //found the setting string
+        read_pointer = strtok(input_line,"="); //up to the start of the SSID
+        read_pointer = strtok(NULL,"="); //the SSID field
+        if(esp->set_station_passwd(read_pointer)){
+          esp->send_http_200_static(channel,(char *)success_msg,(sizeof(success_msg)-1));
+        } else {
+          esp->send_http_200_static(channel,(char *)failure_msg,(sizeof(failure_msg)-1));
+        }
+      }//if(ssid)
+    }//while(read_line)
+  } else {
+    Serial.println(F("| received an unknown setting path"));
+  }
+}
+  
 char channel = 0;
 void loop() {
 
@@ -157,6 +195,8 @@ void loop() {
         esp->send_http_200_with_prefetch(channel,(char *)config_website_text_0,(sizeof(static_website_text_0)-1),
                                         (char *)config_website_text_2,(sizeof(static_website_text_2)-1),
                                         config_website_prefetch, (sizeof(config_website_prefetch) / sizeof(config_website_prefetch[0])));
+      } else if (strstr_P(input_line,PSTR("/info/networks"))){
+        esp->send_networks_list(channel);
       } else {
         Serial.print(F("|     targeting page requested"));
         esp->send_http_200_static(channel,(char *)static_website_text_0,(sizeof(static_website_text_0)-1));      
@@ -172,7 +212,7 @@ void loop() {
           Serial.println(F("tilt_down"));
           shooter->turn_down();
         } else if(strstr_P(input_line,PSTR("pan_right")) != NULL){
-          Serial.println("pan_right");
+          Serial.println(F("pan_right"));
           shooter->turn_right();
         } else if(strstr_P(input_line,PSTR("pan_left")) != NULL){
           Serial.println(F("pan_left"));
@@ -180,6 +220,9 @@ void loop() {
         } else if(strstr_P(input_line,PSTR("fire")) != NULL){
           Serial.println(F("FIRRRRRRE!!!!"));
           shooter->fire();
+        } else if(strstr_P(input_line,PSTR("settings"))){
+          Serial.println(F("Settings Request Received!"));
+          process_settings(channel,input_line);
         }else {
           Serial.println(F("OTHER"));
         }

@@ -17,6 +17,8 @@ const char http_200_start_line[] PROGMEM = "HTTP/1.1 200 OK\r\n\r\n";
 // https://www.w3schools.com/jquery/jquery_ajax_intro.asp
 // https://www.w3schools.com/jquery/jquery_examples.asp
 
+const char success_msg[] PROGMEM = "SUCCESS";
+const char failure_msg[] PROGMEM = "FAIL";
 
 const char blank_website_text[] PROGMEM = "<!DOCTYPE html>\
 <html>\
