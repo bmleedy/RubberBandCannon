@@ -7,9 +7,7 @@
 */
 #include <Arduino.h>
 #include <ServoTimer2.h>
-//#include <Servo.h>
 #include "Stepper.h"
-#include <SoftwareSerial.h>
 
 ////////////// Serial and Debug Definitions //////////////
 //#define SERIAL_BAUD_RATE 57600

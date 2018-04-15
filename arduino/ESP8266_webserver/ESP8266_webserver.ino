@@ -62,6 +62,7 @@
  *          * Make a you tube video and link in readme
  *          * Make a custom icon for the project.
  *          * Try to do auto-targeting with camera image        
+ *          * Add fuzz testing of inputs
  */
 #include <AltSoftSerial.h>
 #include <MemoryUsage.h>
