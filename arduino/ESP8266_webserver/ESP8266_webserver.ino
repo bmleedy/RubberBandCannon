@@ -1,5 +1,9 @@
-/*---------------------------------------------------------------
- * ESP8266_webserver
+/*!
+ * @file ESP8266_webserver.ino
+ * 
+ * @mainpage RubberBandCannon Arduino Code
+ * 
+ * @section intro_sed Introduction
  * 
  * The sole intention of this project is to shoot things with rubber bands using the coolest technology possible.
  * 
@@ -36,61 +40,91 @@
  *        http://arduino-esp8266.readthedocs.io/en/latest/PROGMEM.html
  *        
  *        
- * PLANS:
- *          * Scrub all code for todo's
- *          * Flesh out webserver stack - make more reliable
- *          * Store the website in EEPROM
- *          * Use a CDN (like CloudFront) for icons, graphics and other eye candy (maybe S3?)
- *          * Use HTTP "Content Length:" header instead of terminating connections
- *          * Remove all delay() calls in code
- *          * Enable watchdog timer
- *          * Use AJAX for command buttons - don't reload the website for each button press
- *          * Add super-basic MVC to the webserver
- *          * Add a camera to the shooter/website (snap after each turn)
- *          * Create an ESP initializer program, since 
- *          * Assemble more better-integrated ESP boards
- *          * Build a protoboard with everything on it
- *          * Connectorize harness to board (0.1in block connector)
- *          * Consolidate all constants, etc to a header file
- *          * Get a better name for the webserver
- *          * Code lint 
- *          * Implement TLS
- *          * Figure out what other goodness the ESP8266 gives us
- *          * Make the ESP8266 an access point
- *          * Use access point functionality for device setup
- *          * Support multiple connections (instead of just connection 0)
- *          * Make a you tube video and link in readme
- *          * Make a custom icon for the project.
- *          * Try to do auto-targeting with camera image        
- *          * Add fuzz testing of inputs
+ *          
+ * @section dependencies Dependencies
+ *  This library depends on AltSoftSerial, ServoTimer2, and Stepper Arduino drivers being present on your system. Please make sure you have
+ * installed the latest version before using this library.
+ * 
+ * @section author Author
+ * 
+ * Written by Brett "bmleedy" Leedy for fun and profit.
+ * 
+ * @section license License
+ * 
+ * Copyright Brett Leedy, 2018.  All rights reserved.
  */
+
+
+
+//! @todo Scrub all code for todo's
+//! @todo Flesh out webserver stack - make more reliable
+//! @todo Store the website in EEPROM
+//! @todo Use a CDN (like CloudFront) for icons, graphics and other eye candy (maybe S3?)
+//! @todo Use HTTP "Content Length:" header instead of terminating connections
+//! @todo Remove all delay() calls in code
+//! @todo Enable watchdog timer
+//! @todo Use AJAX for command buttons - don't reload the website for each button press
+//! @todo Add super-basic MVC to the webserver
+//! @todo Add a camera to the shooter/website (snap after each turn)
+//! @todo Create an ESP initializer program, since 
+//! @todo Assemble more better-integrated ESP boards
+//! @todo Build a protoboard with everything on it
+//! @todo Connectorize harness to board (0.1in block connector)
+//! @todo Consolidate all constants, etc to a header file
+//! @todo Get a better name for the webserver
+//! @todo Code lint 
+//! @todo Implement TLS
+//! @todo Figure out what other goodness the ESP8266 gives us
+//! @todo Make the ESP8266 an access point
+//! @todo Use access point functionality for device setup
+//! @todo Support multiple connections (instead of just connection 0)
+//! @todo Make a you tube video and link in readme
+//! @todo Make a custom icon for the project.
+//! @todo Try to do auto-targeting with camera image        
+//! @todo Add fuzz testing of inputs
+
 #include <AltSoftSerial.h>
 #include <MemoryUsage.h>
 #include "ESP8266.h"
 #include "webserver_constants.h"
 #include "rubber_band_shooter.h"
 
-#define DEBUG_MEMORY true
+#define DEBUG_MEMORY true ///<flag to enable serial port prints indicating amount of free heap.
 
-//// Serial Port Definitions
-#define PRINT_SERIAL_STREAM false
+// Serial Port Definitions
+#define PRINT_SERIAL_STREAM false ///<If set, all data to and from the ESP8266 is dumped to the debug serial port.
+/*! @def SERIAL_BAUD_RATE
+ * Serial baud rate to talk to the ESP8266 and to the debug serial port.
+ * Altsoftserial in my configration (non-ideal level shifting) is flaky at
+ * 57600bps.*/
 #define SERIAL_BAUD_RATE 19200
 
-///SoftwareSerial softPort(9,8); //TX,RX
+/*! @var softPort
+ *  9 = TX;
+ *  8 = RX;
+ *  This is the serial port used to communicate with the ESP8266
+ */
 AltSoftSerial softPort;
 
-//// ESP8266 Definitions
-ESP8266 * esp;
+ESP8266 * esp; ///<This is the class used to interface the ESP.
+/*! var input_line
+ * This is used to hold the most recent line read from the ESP.
+ */
 char input_line[SERIAL_INPUT_BUFFER_MAX_SIZE+1];
 
-Rubber_Band_Shooter * shooter;
+Rubber_Band_Shooter * shooter;///<This is the class used to interface rubber band shooter
 
-#define SHOOTER_HAMMER_PIN      3
-#define SHOOTER_ELEVATION_PIN   11
+#define SHOOTER_HAMMER_PIN      3 ///<The pin to use to control the hammer servo.
+#define SHOOTER_ELEVATION_PIN   11 ///<The pin to use to control the hammer servo.
 
-/*---------------------------------------------------------------
- * SETUP
- *-------------------------------------------------------------*/
+/*!
+ * @fn setup
+ * 
+ * @brief Runs once before the main loop
+ * 
+ * This function initializes all serial ports then calls the constructor 
+ * for the ESP8266 class.
+ */
 void setup() {
   // Setup the debug serial port
   Serial.begin(SERIAL_BAUD_RATE);
@@ -117,9 +151,22 @@ void setup() {
 
 }
 
-/*---------------------------------------------------------------
- * LOOP
- *-------------------------------------------------------------*/
+
+
+/*!
+ * @brief Gets the channel number from an ESP "IPD" line
+ * 
+ * Reads the input line with length len and returns the channel found, 
+ * or zero if none is found.
+ * 
+ * @param line
+ *        a pointer to the array containing a line from the ESP
+ *        
+ * @param len
+ *        the number of characters in the line, including the '\n'
+ *        
+ * @return the channel found, or zero if one is not found
+ */
 char get_channel(char line[], int len){
   char string_to_parse[len]; 
   strncpy(string_to_parse,line,len);
@@ -137,9 +184,21 @@ char get_channel(char line[], int len){
   
 }
 
-
-//todo: maybe pull this into the esp class
-//todo: make these more DRY
+/*!
+ * @fn process_settings
+ * 
+ * @brief processes the settings command for the ESP
+ * 
+ * @param channel
+ *        This is the channel on which the request for settings was transmitted.
+ *        Send the response back on the same channel.
+ *        
+ * @param input_line
+ *        This is the last line read from the ESP8266, which contains the path to
+ *        the setting that we want to change.
+ */
+//! @todo maybe pull this into the esp class
+//! @todo make these more DRY
 void process_settings(unsigned char channel, char input_line[]) {
   char* read_pointer = NULL;
 
@@ -176,8 +235,15 @@ void process_settings(unsigned char channel, char input_line[]) {
     Serial.println(F("| received an unknown setting path"));
   }
 }
-  
-char channel = 0;
+
+
+/*!
+ * @fn loop
+ * 
+ * @brief main loop for the Arduino
+ * 
+ */
+char channel = 0; ///<The channel on which the last request to me was sent.
 void loop() {
 
   

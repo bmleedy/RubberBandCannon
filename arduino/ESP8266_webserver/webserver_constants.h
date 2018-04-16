@@ -8,17 +8,23 @@
 #ifndef webserver_constants_h
 #define webserver_constants_h
 
-// https://tools.ietf.org/html/rfc2616#page-31
-//todo: add content length header
+
+/*!
+ * @var http_200_start_line
+ * 
+ * @brief HTTP 200 response start line and trailing newlines.
+ * 
+ * https://tools.ietf.org/html/rfc2616#page-31
+ * http://www.nongnu.org/avr-libc/user-manual/group__avr__pgmspace.html
+ * https://www.w3schools.com/jquery/jquery_ajax_intro.asp
+ * https://www.w3schools.com/jquery/jquery_examples.asp
+ */
+//! @todo: add content length header
 const char http_200_start_line[] PROGMEM = "HTTP/1.1 200 OK\r\n\r\n";
-#define HTTP_200_START_LINE_LEN 19
+#define HTTP_200_START_LINE_LEN 19 //! @def length of HTTP 200 start line
 
-//  http://www.nongnu.org/avr-libc/user-manual/group__avr__pgmspace.html
-// https://www.w3schools.com/jquery/jquery_ajax_intro.asp
-// https://www.w3schools.com/jquery/jquery_examples.asp
-
-const char success_msg[] PROGMEM = "SUCCESS";
-const char failure_msg[] PROGMEM = "FAIL";
+const char success_msg[] PROGMEM = "SUCCESS"; //! @var const char success_msg @brief returned on command success
+const char failure_msg[] PROGMEM = "FAIL";    //! @var @brief returned on command failure
 
 const char blank_website_text[] PROGMEM = "<!DOCTYPE html>\
 <html>\

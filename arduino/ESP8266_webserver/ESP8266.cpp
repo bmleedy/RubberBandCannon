@@ -1,5 +1,7 @@
-/*------------------------------------------------------------------------------
- * ESP8266
+/*!
+ * @file ESP8266.cpp
+ * 
+ * @brief ESP8266 webserver class
  *  
  * This class is an ESP8266 for the purposes of my IOT work.  On creation,
  * it will set the device to:
@@ -10,12 +12,18 @@
  * You then interact with it's public methods to use the server:
  *  * Check_for_requests(bool verbose) - reads one line from the SoftwareSerial
  *    port and returns TRUE if a line contains a string specified by the caller.
- * 
- ------------------------------------------------------------------------------*/
+ *    
+ */
 #include "ESP8266.h"
 
-/* ESP8266()
- * Constructor: SoftwareSerial port must already be initialized 
+/*!
+ * @brief Constructor: SoftwareSerial port must already be initialized 
+ * 
+ * @param port     This is a reference to an already-initialized AltSoftSerial port.
+ * 
+ * @param verbose  If this is set to true, we will spew data received over the serial port.
+ * 
+ * @return         This is a constructor.
  */
 ESP8266::ESP8266(AltSoftSerial *port, bool verbose){
   this->port = port;  //serial port
@@ -32,15 +40,18 @@ ESP8266::ESP8266(AltSoftSerial *port, bool verbose){
   this->setup_device();
 }
 
-/* read_line() 
+/*!
  *  Read all data avalable on the serial port.  If I encounter
  *    a '\n'  write the data from the beginning of the input buffer
  *    up to and including the '\n' character and return TRUE.
  *    
  *  If I do not encounter a '\n' return FALSE and do not copy 
  *    anything.
+ *  @param line_buffer
+ *         pointer to the buffer which we will fill with the line data.
+ *         
+ *  @return TRUE if a line was read successfully
  */
-
 bool ESP8266::read_line(char line_buffer[]){
   //todo: add max length to copy for buffer as an arg.
   char latest_byte = '\0';
@@ -62,6 +73,16 @@ bool ESP8266::read_line(char line_buffer[]){
 }
 
 
+/*!
+ *  Read one line from the ESP until timeout.
+ *  
+ *  @param line_buffer
+ *         pointer to the buffer which we will fill with the line data.
+ *  @param timeout_ms
+ *         number of milliseconds to wait until the line has been read.
+ *         
+ *  @returns TRUE if a line was read successfully
+ */
 bool ESP8266::read_line(char line_buffer[], unsigned int timeout_ms){
   unsigned int start_time = millis();
 
@@ -71,11 +92,11 @@ bool ESP8266::read_line(char line_buffer[], unsigned int timeout_ms){
     else
       delay(2);  //chill for 2 ms
   }
+  return false;
 }
 
 
-
-/* clear_buffer()
+/*!
  *  Empty the input ring buffer.
  */
 void ESP8266::clear_buffer(){
@@ -83,10 +104,23 @@ void ESP8266::clear_buffer(){
 }
 
 
-/* expect_response_to_command()
+/*!
  *  Send a command and expect a string in response.
  *  
  *  Used for setting up the ESP8266
+ *  
+ *  @param command
+ *         pointer to the string containing an ESP8266 AT command
+ *  @param command_len
+ *         length of the command string
+ *  @param desired_response
+ *         String to expect in response to the command
+ *  @param response_len
+ *         length of the response string
+ *  @param timeout_ms
+ *         amount of time to wait for the command to respond.
+ *         
+ *  @return TRUE if we received the expected response
  */
 bool ESP8266::expect_response_to_command(const char * command, unsigned int command_len,
                                 const char * desired_response, unsigned int response_len,
@@ -116,9 +150,11 @@ bool ESP8266::expect_response_to_command(const char * command, unsigned int comm
 }
 
 
-/* setup_device()
+/*!
  *  
  *  Setup the ESP8266 as a webserver
+ *  
+ *  @return True if setup was successful
  *  
  */
 bool ESP8266::setup_device(){
@@ -241,10 +277,12 @@ bool ESP8266::setup_device(){
 }
 
 
-/* send_output_queue()
+/*!
  *  
  *  Send the contents of my output queue to a specific channel
  *  
+ *  @param channel
+ *         The channel to which this send will be transmitted.
  */
 void ESP8266::send_output_queue(unsigned char channel){
     // Command the esp to listen for n bytes of data
@@ -296,10 +334,15 @@ void ESP8266::send_output_queue(unsigned char channel){
 }
 
 
-/* send_http_200_static()
- *  
+/*!
  *  Send a static website as an HTTP 200 response.
  *  
+ *  @param channel
+ *         The channel on which we send this response
+ *  @param page_data
+ *         A pointer to the page data to be transmitted
+ *  @param page_data_len
+ *         Number of characters in the page data to be transmitted
  */
 void ESP8266::send_http_200_static(unsigned char channel, char page_data[], unsigned int page_data_len){
 
@@ -315,13 +358,27 @@ void ESP8266::send_http_200_static(unsigned char channel, char page_data[], unsi
   this->send_output_queue(channel);
 }
 
-/* send_http_200_with_prefetch()
- *  
+
+/*!
  *  Sends an http 200 response, populating a javascript map variable 
  *    with data fetched about the device's configuration.  This was 
  *    created for the config page, which should display the current settings
  *    when you load the page.
- *  
+ *    
+ *    @param channel
+ *           the channel to which we will send this request
+ *    @param page_data_0
+ *           pointer to the first page data element to write (before the dynamic data)
+ *    @param page_data_0_len
+ *           length of the element above
+ *    @param page_data_2
+ *           pointer to the first page data element to write (after the dynamic data)
+ *    @param page_data_2_len
+ *           length of the element above
+ *    @param prefetch_data_fields
+ *           this is a list of 7-character ID's
+ *    @param num_prefetch_data_fields
+ *           the number of 7-character fields to retrieve
  */
 void ESP8266::send_http_200_with_prefetch(unsigned char channel,
                                           char page_data_0[], unsigned int page_data_0_len,
@@ -331,7 +388,7 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
   // start-line per https://tools.ietf.org/html/rfc2616#page-31 
   this->output_queue.add_element((char *)http_200_start_line, HTTP_200_START_LINE_LEN, true);
 
-  // todo: add content-length header
+  //! @todo add content-length header
 
   // Now enqueue the first section of website page data (in progmem)
   this->output_queue.add_element(page_data_0, page_data_0_len,true);
@@ -404,7 +461,7 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
 }
 
 
-/* query_network_ssid()
+/*!
  *  
  *  Make a call to the ESP8266 to get my own SSID and update my internal
  *    class variables with the values I read.
@@ -439,10 +496,11 @@ void ESP8266::query_network_ssid(){
   Serial.println(F("Response timed out"));
 }
 
-/* is_network_connected()
- * 
+
+/*!
  * Make a call to the ESP8266 serial port and check that it responds happily
  * 
+ * @return TRUE if the network is connected
  */
 bool ESP8266::is_network_connected(){
   char request_buffer[COMMAND_BUFFER_SIZE];
@@ -455,14 +513,13 @@ bool ESP8266::is_network_connected(){
                                   strnlen(response_buffer,COMMAND_BUFFER_SIZE));
 }
 
-/* query_ip_and_mac()
- *  
+
+/*!
  *  Make a call to the ESP8266 serial port to get the current station
  *    IP address and MAC address.  Save these in the class variables
  *    as my current station ip and MAC.
  *  
  */
-
 void ESP8266::query_ip_and_mac(){
   char input_buffer[MAX_RESPONSE_LINE_LEN] = "";
   unsigned int timeout_ms = 2000;
@@ -497,10 +554,14 @@ void ESP8266::query_ip_and_mac(){
   Serial.println(F("| IP and mac Response timed out"));
 }
 
-/* write_port()
- * 
+/*!
  * Simply writes to the ESP serial port, with logging if needed.
  * 
+ * @param write_string
+ *        a char array to write out to the ESP serial port
+ *        
+ * @param len
+ *        how many characters to write 
  */
 void ESP8266::write_port(char * write_string, unsigned int len){
   //write to port here
@@ -509,10 +570,10 @@ void ESP8266::write_port(char * write_string, unsigned int len){
     Serial.write(write_string,len);
 }
 
-/* read_port()
- * 
+/*!
  * Simply reads from the ESP serial port, with logging if needed.
  * 
+ * @return a char from the serial port;
  */
 char ESP8266::read_port(){
   char rv = this->port->read();
@@ -522,10 +583,13 @@ char ESP8266::read_port(){
 }
 
 
-/*set_station_ssid__()
- * 
+/*!
  * Sends the command to set the SSID to the ESP8266 and returns true if it succeeds.
  * 
+ * @param new_ssid
+ *        c-string array containing the new SSID
+ *     
+ * @return TRUE if we successfully set the SSID we connect to.
  */
 bool ESP8266::set_station_ssid__(char new_ssid[]){
 
@@ -558,10 +622,13 @@ bool ESP8266::set_station_ssid__(char new_ssid[]){
 }
 
 
-/*set_station_passwd()
- * 
+/*!
  * Sends the command to set the password to the ESP8266 and returns true if it succeeds.
  * 
+ * @param new_password
+ *        c-string array with the new password
+ *        
+ * @return TRUE if the station password was successfully set.
  */
 bool ESP8266::set_station_passwd(char new_password[]){
   char command_to_send[(MAX_SSID_LENGTH+MAX_PASSWORD_LENGTH+18)];
@@ -593,7 +660,14 @@ bool ESP8266::set_station_passwd(char new_password[]){
 }
 
 
-
+/*!
+ * Reads the list of networks that the ESP can see and writes it back 
+ * in an HTTP response to the connection at the channel param.
+ * 
+ * @param channel
+ *        The channel to which I should send the response.
+ * 
+ */
 void ESP8266::send_networks_list(unsigned char channel){
   char command_to_write[COMMAND_BUFFER_SIZE];
   char response_line[MAX_RESPONSE_LINE_LEN];
@@ -632,22 +706,31 @@ void ESP8266::send_networks_list(unsigned char channel){
     }
   }//while()
 }
-/*-----------------------------------------------------------------
- * OutputQueue
- * 
+
+
+/*! 
  * Holds pointers to strings, their sizes, and a tally of the sizes
  * of all of the strings that need to be outputted.
  * 
  * (see header file for usage)
- *-----------------------------------------------------------------
  */
-
 OutputQueue::OutputQueue(){
   this->clear_elements();
 }
 
 
-// Add an element to this queue.
+/*!
+ * Add an element to this queue.
+ * 
+ * @param string
+ *        pointer to the string to be written
+ *        
+ * @param string_len
+ *        length of string to be written
+ *        
+ * @param is_progmem
+ *        set to true if this is a progmem string
+ */
 void OutputQueue::add_element(char * string, unsigned int string_len, bool is_progmem){
   if(queue_len >= MAX_OUTPUT_QUEUE_LENGTH){
     Serial.println(F("| OutputQueue::add_element: Max output queue length exceeded! Check your code!"));
@@ -663,7 +746,9 @@ void OutputQueue::add_element(char * string, unsigned int string_len, bool is_pr
 }
 
 
-// Clear the queue and the read position at the same time
+/*!
+ * Clear the queue and the read position at the same time
+ */
 void OutputQueue::clear_elements(){
   //no need to actually erase the data, just reset list position
   queue_len = 0;
@@ -672,8 +757,15 @@ void OutputQueue::clear_elements(){
 }
 
 
-//returns false if none are available.
-//resets the queue and returns false when there is nothing left to read
+/*!
+ * returns false if none are available.
+ * resets the queue and returns false when there is nothing left to read
+ * 
+ * @param output
+ *        A pointer to the data field to which we'll copy the next field. 
+ *        
+ * @return TRUE of an element is available
+ */
 bool OutputQueue::get_element(string_element * output){
   if(read_position >= queue_len){
     //nothing to read
@@ -687,21 +779,22 @@ bool OutputQueue::get_element(string_element * output){
 }
 
 
-// Returns the sum of the lengths of the enqueued strings
+/*!
+ * Returns the sum of the lengths of the enqueued strings
+ * 
+ * @return the sum of the lengths of the strings in the output buffer.
+ */
 unsigned int OutputQueue::get_total_size(){
   return this->total_size;
 }
 
 
-/*-----------------------------------------------------------------
- * CircularBuffer
- * 
+/*!
  * Simple ring buffer to handle serial output that we want to scan for string matches.
  * 
- * (see header file for usage)
- *-----------------------------------------------------------------
+ * @param buf_size
+ *        How much space to allocate for the buffer.
  */
-
 // Constructor just clears the buffer
 CircularBuffer::CircularBuffer(int buf_size){
   this->buf = new char[buf_size];
@@ -710,14 +803,23 @@ CircularBuffer::CircularBuffer(int buf_size){
 }
 
 
-// Clear the buffer
+/*!
+ * Clear the buffer
+ */
 void CircularBuffer::buf_reset(){
     this->head = 0;
     this->tail = 0;
 }
 
 
-//returns false if we overflowed and lost data.
+/*! 
+ * returns false if we overflowed and lost data.
+ * 
+ * @param data
+ *        One character to insert into the buffer
+ *        
+ * @return True if the buffer was not full, false otherwise
+ */
 bool CircularBuffer::buf_put(char data){
   bool rv;
   buf[head] = data;
@@ -731,8 +833,14 @@ bool CircularBuffer::buf_put(char data){
   return rv;
 }
 
-
-//returns true if the buffer had a value to get
+/*!
+ * returns true if the buffer had a value to get
+ * 
+ * @param data
+ *        pointer to the data character that we read.
+ *        
+ * @return True if the buffer is not empty and we can return a character
+ */
 bool CircularBuffer::buf_get(char * data){
     bool r = false;
 
@@ -747,22 +855,37 @@ bool CircularBuffer::buf_get(char * data){
 }
 
 
-//returns true if the buffer's empty
+/*!
+ * returns true if the buffer's empty
+ * 
+ * @return True if the buffer is empty
+ */
 bool CircularBuffer::is_empty(){
   return (head == tail);
 }
 
-//returns true if the buffer's full
+/*!
+ * returns true if the buffer's full
+ * 
+ * @return True if the buffer is full
+ */
 bool CircularBuffer::is_full(){
   return ((head + 1) % buf_size) == tail;
 }
 
+/*!
+ * reads the contents of my buffer to a string pointer provided.
+ * 
+ * @param string
+ *        the string to which we're copying
+ */
 void CircularBuffer::read_buffer_to_string(char string[]){
   int iter = 0;
   while(!this->is_empty()){
     this->buf_get(string+iter);
     iter++;
   }
-  string[iter]='\0';//todo: this assumes the target is as big as input_max_size plus one.  not safe!
+  string[iter]='\0';
+  //!@todo this assumes the target is as big as input_max_size plus one.  not safe!
 }
 

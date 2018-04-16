@@ -1,5 +1,5 @@
-/*
- * Rubber_Band_Shooter (Class)
+/*!
+ * @file Rubber_Band_Shooter.cpp
  * 
  * This class handles operation of all servos for a pan/tilt/fire rubber band servo system.
  * 
@@ -7,14 +7,18 @@
 #include "Rubber_Band_Shooter.h"
 
 
-// Fire the rubber band
+/*!
+ * Fire the rubber band
+ */
 void Rubber_Band_Shooter::fire() {
   hammer.write(map(FIRE_HAMMER_POSITION,0,180,MIN_PULSE_WIDTH,MAX_PULSE_WIDTH));  //fiiiirrrre!
   delay(1000);  //wait a second for the servo to get there //todo: get rid of blocking delay
   hammer.write(map(ARMED_HAMMER_POSITION,0,180,MIN_PULSE_WIDTH,MAX_PULSE_WIDTH));  //ready to load again
 }
 
-// increase the elevation by one increment
+/*!
+ * increase the elevation by one increment
+ */
 void Rubber_Band_Shooter::turn_up() {
   //move in positive direction
   elevation_command_position = elevation_command_position + ELEVATION_POSITION_INCREMENT;
@@ -26,7 +30,9 @@ void Rubber_Band_Shooter::turn_up() {
   elevation.write(map(elevation_command_position,0,180,MIN_PULSE_WIDTH,MAX_PULSE_WIDTH));
 }
 
-// decrease the elevation by one increment
+/*!
+ * decrease the elevation by one increment
+ */
 void Rubber_Band_Shooter::turn_down() {
   //move in positive direction
   elevation_command_position = elevation_command_position - ELEVATION_POSITION_INCREMENT;
@@ -36,7 +42,9 @@ void Rubber_Band_Shooter::turn_down() {
   elevation.write(map(elevation_command_position,0,180,MIN_PULSE_WIDTH,MAX_PULSE_WIDTH));
 }
 
-// turn clockwise by one increment
+/*!
+ * turn clockwise by one increment
+ */
 void Rubber_Band_Shooter::turn_right(){
   int step_distance = BASE_STEP_INCREMENT * BASE_STEPS_PER_DEGREE;
   small_stepper->setSpeed(BASE_MAX_SPEED);
@@ -44,7 +52,9 @@ void Rubber_Band_Shooter::turn_right(){
   delay(MAX_BLOCKING_DELAY); //todo: make this non-blocking
 }
 
-// turn counterclockwise by one increment
+/*!
+ * turn counterclockwise by one increment
+ */
 void Rubber_Band_Shooter::turn_left(){
   int step_distance = -1 * BASE_STEP_INCREMENT * BASE_STEPS_PER_DEGREE;
   small_stepper->setSpeed(BASE_MAX_SPEED); //Max is 500
@@ -53,7 +63,9 @@ void Rubber_Band_Shooter::turn_left(){
 }
 
 
-// Constructor
+/*!
+ * Constructor
+ */
 Rubber_Band_Shooter::Rubber_Band_Shooter(){
 
   // reserve space for my serial input buffer
@@ -73,7 +85,14 @@ Rubber_Band_Shooter::Rubber_Band_Shooter(){
 }
 
 
-// Constructor with pin specifier
+/*!
+ * Constructor with pin specifier
+ * 
+ * @param hammer_pin
+ *        The pin on which the hammer servo is driven
+ * @param elevation_pin
+ *        The pin on which the elevation servo is driven
+ */
 Rubber_Band_Shooter::Rubber_Band_Shooter(unsigned char hammer_pin, unsigned char elevation_pin){
 
   // reserve space for my serial input buffer
