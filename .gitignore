@@ -34,3 +34,5 @@
 # Temporary and generated files
 *~
 *.hh
+.DS_Store
+doxygen_html
