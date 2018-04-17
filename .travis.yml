@@ -21,7 +21,7 @@ before_install:
 install:
 # https://github.com/arduino/Arduino/blob/master/build/shared/manpage.adoc
    - arduino --install-library "AltSoftSerial","MemoryUsage","Stepper"
-   - source generate_headers_from_html.bash
+   - cd arduino/ESP8266_webserver/ && source generate_headers_from_html.bash
 
 script:
    - build_main_platforms
