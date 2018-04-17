@@ -15,23 +15,24 @@ env:
 before_install:
    - TRAVIS_BUILD_DIR=$TRAVIS_BUILD_DIR/arduino/ESP8266_webserver
    - echo $TRAVIS_BUILD_DIR
-#   - source <(curl -SLs https://raw.githubusercontent.com/adafruit/travis-ci-arduino/master/install.sh)
-   - source $TRAVIS_BUILD_DIR/setup_travis_env.sh
+# old:  - source <(curl -SLs https://raw.githubusercontent.com/adafruit/travis-ci-arduino/master/install.sh)
+##   - source $TRAVIS_BUILD_DIR/setup_travis_env.sh
 # Install ServoTimer2 from git
    - mkdir -p ~/Arduino/libraries
    - wget https://github.com/nabontra/ServoTimer2/archive/master.zip && unzip master.zip -d ~/Arduino/libraries/
 
 install:
 # https://github.com/arduino/Arduino/blob/master/build/shared/manpage.adoc
-   - arduino --install-library "AltSoftSerial","MemoryUsage","Stepper"
+##   - arduino --install-library "AltSoftSerial","MemoryUsage","Stepper"
    - cd $TRAVIS_BUILD_DIR && source generate_headers_from_html.bash
 
 script:
-   - build_main_platforms
+##   - build_main_platforms
 
 # Generate and deploy documentation
 after_success:
   - echo TRAVIS_BUILD_DIR is ${TRAVIS_BUILD_DIR}
   - export DOXYFILE=${TRAVIS_BUILD_DIR}/Doxyfile
   - source <(curl -SLs  https://raw.githubusercontent.com/adafruit/travis-ci-arduino/master/library_check.sh)
-  - source <(curl -SLs  https://raw.githubusercontent.com/adafruit/travis-ci-arduino/master/doxy_gen_and_deploy.sh)
+  - source $TRAVIS_BUILD_DIR/doxy_gen_and_deploy.sh
+#  - source <(curl -SLs  https://raw.githubusercontent.com/adafruit/travis-ci-arduino/master/doxy_gen_and_deploy.sh)
