@@ -18,7 +18,7 @@ for file in ${HTML_FILES}; do
   echo "#define ${HEADER_NAME_BASE_UPPER}_HTML_HH" >> ${HEADER_FILENAME}
   echo "/************************************************" >> ${HEADER_FILENAME}
   echo " * GENERATED FILE -- DO NOT HAND-MODIFY!!!!!!!!!!" >> ${HEADER_FILENAME}
-  echo "/***********************************************/" >> ${HEADER_FILENAME}
+  echo " ***********************************************/" >> ${HEADER_FILENAME}
   echo "const char ${HEADER_NAME_BASE}_text_0[] PROGMEM = \"\\"  >> ${HEADER_FILENAME}
 
   # Print all of the lines up to the first "////"
