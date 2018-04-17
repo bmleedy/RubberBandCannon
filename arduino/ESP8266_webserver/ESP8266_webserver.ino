@@ -87,7 +87,7 @@
 #include <MemoryUsage.h>
 #include "ESP8266.h"
 #include "webserver_constants.h"
-#include "rubber_band_shooter.h"
+#include "Rubber_Band_Shooter.h"
 
 #define DEBUG_MEMORY true ///<flag to enable serial port prints indicating amount of free heap.
 
