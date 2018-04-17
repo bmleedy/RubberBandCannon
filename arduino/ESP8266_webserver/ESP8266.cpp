@@ -163,7 +163,7 @@ bool ESP8266::expect_response_to_command(const char * command, unsigned int comm
 bool ESP8266::setup_device(){
     char request_buffer[COMMAND_BUFFER_SIZE]; 
     char response_buffer[COMMAND_BUFFER_SIZE];
-  
+   
     // Get a response from anyone
     Serial.print(F("ESP8266 - Waiting for a response from the Wifi Device..."));
     while(!expect_response_to_command("AT\r\n",4,"OK")){
@@ -269,6 +269,7 @@ bool ESP8266::setup_device(){
         Serial.println(F("[FAIL]"));
         return false;
     }
+  return true;
 }
 
 
@@ -300,7 +301,7 @@ void ESP8266::send_output_queue(unsigned char channel){
     while(output_queue.get_element(&data_to_write)){
       if(this->verbose){Serial.print("Outputing queue element size ");Serial.println(data_to_write.string_length);}
       if(data_to_write.is_progmem){
-        for(int i=0;i<data_to_write.string_length;i++){
+        for(unsigned int i=0;i<data_to_write.string_length;i++){
           char byte_to_write = pgm_read_byte(data_to_write.pointer + i);
           write_port(&byte_to_write, 1);
         }
@@ -397,7 +398,7 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
   prefetch_output_buffer_len = 0; //clear the output buffer
   bool have_queried_mac = false;  //only queried to get mac and IP
   int buffer_size_remaining = PREFETCH_OUTPUT_BUFFER_SIZE;
-  for(int i=0; i<num_prefetch_data_fields; i++){
+  for(unsigned int i=0; i<num_prefetch_data_fields; i++){
 
     // check
     buffer_size_remaining = PREFETCH_OUTPUT_BUFFER_SIZE - prefetch_output_buffer_len;
@@ -599,8 +600,7 @@ bool ESP8266::set_station_ssid__(char new_ssid[]){
              PSTR("AT+CWJAP_DEF=%s,%s\r\n"), 
              new_ssid, 
              this->station.password);
-  int i = 0;
-  for(int i=0; i<max_attempts; i++){
+  for(unsigned int i=0; i<max_attempts; i++){
     if(expect_response_to_command(command_to_send, 
                                      strlen(command_to_send),
                                      desired_response,5000)){
@@ -636,8 +636,7 @@ bool ESP8266::set_station_passwd(char new_password[]){
              PSTR("AT+CWJAP_DEF=%s,%s\r\n"), 
              this->station.ssid, 
              new_password);
-  int i = 0;
-  for(int i=0; i<max_attempts; i++){
+  for(unsigned int i=0; i<max_attempts; i++){
     if(expect_response_to_command(command_to_send, 
                                      strlen(command_to_send),
                                      desired_response,5000)){

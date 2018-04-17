@@ -122,7 +122,7 @@ class OutputQueue{
   private:
   string_element queue[MAX_OUTPUT_QUEUE_LENGTH];  ///<A list of pointers to elements to output
   unsigned int queue_len;                         ///<Number of elements in the queue
-  int read_position;                              ///<Index of most recently read element
+  unsigned int read_position;                     ///<Index of most recently read element
   unsigned int total_size;                        ///<Total number of characters in the buffer
 
   public:
