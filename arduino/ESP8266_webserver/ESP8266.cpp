@@ -126,7 +126,7 @@ void ESP8266::clear_buffer(){
  *  @return TRUE if we received the expected response
  */
 bool ESP8266::expect_response_to_command(const char * command, unsigned int command_len,
-                                const char * desired_response, unsigned int response_len,
+                                const char * desired_response,
                                 unsigned int timeout_ms){
   char response_line[MAX_RESPONSE_LINE_LEN] = "";
 
@@ -166,7 +166,7 @@ bool ESP8266::setup_device(){
   
     // Get a response from anyone
     Serial.print(F("ESP8266 - Waiting for a response from the Wifi Device..."));
-    while(!expect_response_to_command("AT\r\n",4,"OK",2)){
+    while(!expect_response_to_command("AT\r\n",4,"OK")){
         delay(1000);
     }
     Serial.println(F("[OK]"));
@@ -177,8 +177,7 @@ bool ESP8266::setup_device(){
     strncpy_P(response_buffer,PSTR("+CWMODE:1"),COMMAND_BUFFER_SIZE);
     if(expect_response_to_command(request_buffer,
                                   strnlen(request_buffer,COMMAND_BUFFER_SIZE),
-                                  response_buffer,
-                                  strnlen(response_buffer,COMMAND_BUFFER_SIZE))){
+                                  response_buffer)){
         Serial.println(F("[OK]"));
     } else {
         Serial.print (F("\nESP8266 -    Setting the mode to 'client mode'"));
@@ -186,8 +185,7 @@ bool ESP8266::setup_device(){
         strncpy_P(response_buffer,PSTR("OK"), COMMAND_BUFFER_SIZE);
         if(expect_response_to_command(request_buffer,
                                       strnlen(request_buffer,COMMAND_BUFFER_SIZE),
-                                      response_buffer,
-                                      strnlen(response_buffer,COMMAND_BUFFER_SIZE))){
+                                      response_buffer)){
             Serial.println(F("[OK]"));
         }
         else {
@@ -202,8 +200,7 @@ bool ESP8266::setup_device(){
     snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("+CWJAP:\"%s\""),station.ssid);
     if(expect_response_to_command(request_buffer,
                                   strnlen(request_buffer,COMMAND_BUFFER_SIZE),
-                                  response_buffer,
-                                  strnlen(response_buffer,COMMAND_BUFFER_SIZE))){
+                                  response_buffer)){
         Serial.println(F("[OK]"));
     } else {
         Serial.print (F("\nESP8266 -     Not on the correct network.  Changing the WiFi settings to join network..."));
@@ -212,7 +209,6 @@ bool ESP8266::setup_device(){
         if(expect_response_to_command(request_buffer,
                                       strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                       response_buffer,
-                                      strnlen(response_buffer,COMMAND_BUFFER_SIZE),
                                       10000)){
             Serial.println(F("[OK]"));
         }
@@ -228,8 +224,7 @@ bool ESP8266::setup_device(){
     strncpy_P(response_buffer,PSTR("+CIPMUX:1"),COMMAND_BUFFER_SIZE);
     if(expect_response_to_command(request_buffer,
                                   strnlen(request_buffer,COMMAND_BUFFER_SIZE),
-                                  response_buffer,
-                                  strnlen(response_buffer,COMMAND_BUFFER_SIZE))){
+                                  response_buffer)){
         Serial.println(F("[OK]"));
     } else {
         Serial.print (F("\nESP8266 -    Server not enabled yet. Setting CIPMUX=1..."));
@@ -238,7 +233,6 @@ bool ESP8266::setup_device(){
         if(expect_response_to_command(request_buffer,
                                       strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                       response_buffer,
-                                      strnlen(response_buffer,COMMAND_BUFFER_SIZE),
                                       10000)){
             Serial.println(F("[OK]"));
         }
@@ -255,7 +249,6 @@ bool ESP8266::setup_device(){
     if(expect_response_to_command(request_buffer,
                                   strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                   response_buffer,
-                                  strnlen(response_buffer,COMMAND_BUFFER_SIZE),
                                   10000)){
         Serial.println(F("[OK]"));
     } else {
@@ -270,7 +263,6 @@ bool ESP8266::setup_device(){
     if(expect_response_to_command(request_buffer,
                                   strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                   response_buffer,
-                                  strnlen(response_buffer,COMMAND_BUFFER_SIZE),
                                   10000)){
         Serial.println(F("[OK]"));
     } else {
@@ -329,8 +321,7 @@ void ESP8266::send_output_queue(unsigned char channel){
     strncpy_P(response_buffer,PSTR("OK"),COMMAND_BUFFER_SIZE);
     if(expect_response_to_command(write_command_string,
                                   strnlen(write_command_string,COMMAND_BUFFER_SIZE),
-                                  response_buffer,
-                                  strnlen(response_buffer,COMMAND_BUFFER_SIZE))){
+                                  response_buffer)){
         //Closed successfully - no action needed
     } else {
         //Print a warning - if this happens often, potentially put this into a loop to make sure we close channels
@@ -514,8 +505,7 @@ bool ESP8266::is_network_connected(){
   sprintf_P(response_buffer,PSTR("+CWJAP:\"%s\""),station.ssid);
   return expect_response_to_command(request_buffer,
                                   strnlen(request_buffer,COMMAND_BUFFER_SIZE),
-                                  response_buffer,
-                                  strnlen(response_buffer,COMMAND_BUFFER_SIZE));
+                                  response_buffer);
 }
 
 
@@ -613,8 +603,7 @@ bool ESP8266::set_station_ssid__(char new_ssid[]){
   for(int i=0; i<max_attempts; i++){
     if(expect_response_to_command(command_to_send, 
                                      strlen(command_to_send),
-                                     desired_response, 
-                                     strlen(desired_response),5000)){
+                                     desired_response,5000)){
       //update my class variable
       strncpy(this->station.ssid,new_ssid,MAX_SSID_LENGTH+1);
       //return success
@@ -651,8 +640,7 @@ bool ESP8266::set_station_passwd(char new_password[]){
   for(int i=0; i<max_attempts; i++){
     if(expect_response_to_command(command_to_send, 
                                      strlen(command_to_send),
-                                     desired_response, 
-                                     strlen(desired_response),5000)){
+                                     desired_response,5000)){
       //update my class variable
       strncpy(this->station.password,new_password,MAX_PASSWORD_LENGTH+1);
       //return success

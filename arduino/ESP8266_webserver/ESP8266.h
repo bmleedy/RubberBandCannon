@@ -242,7 +242,7 @@ public:
     
 private:
     bool expect_response_to_command(const char * command, unsigned int command_len,
-                                    const char * desired_response, unsigned int response_len,
+                                    const char * desired_response,
                                     unsigned int timeout_ms=2000);
     bool setup_device();
     void send_output_queue(unsigned char channel);
