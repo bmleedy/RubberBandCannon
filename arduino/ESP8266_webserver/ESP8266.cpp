@@ -36,7 +36,7 @@ ESP8266::ESP8266(AltSoftSerial *port, bool verbose){
   this->dump_writes= this->verbose;
   //todo: load the following values from eeprom instead of hard-coded defaults
   strcpy_P(station.ssid,PSTR("leedy"));         //default SSID
-  sprintf_P(station.password,PSTR("teamgoat"));  //default password
+  strcpy_P(station.password,PSTR("teamgoat"));  //default password
   this->server.port = DEFAULT_PORT;
   this->server.maxconns = DEFAULT_MAXCONNS;
 
@@ -173,8 +173,8 @@ bool ESP8266::setup_device(){
     
     Serial.print(F("ESP8266 - Checking the device CWMODE..."));
     // Set myself up as a client of an access point.
-    snprintf_P(request_buffer, COMMAND_BUFFER_SIZE,PSTR("AT+CWMODE?\r\n"));
-    snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("+CWMODE:1"));
+    strncpy_P(request_buffer,PSTR("AT+CWMODE?\r\n"), COMMAND_BUFFER_SIZE);
+    strncpy_P(response_buffer,PSTR("+CWMODE:1"),COMMAND_BUFFER_SIZE);
     if(expect_response_to_command(request_buffer,
                                   strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                   response_buffer,
@@ -182,8 +182,8 @@ bool ESP8266::setup_device(){
         Serial.println(F("[OK]"));
     } else {
         Serial.print (F("\nESP8266 -    Setting the mode to 'client mode'"));
-        snprintf_P(request_buffer, COMMAND_BUFFER_SIZE,PSTR("AT+CWMODE=1\r\n"));
-        snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("OK"));
+        strncpy_P(request_buffer,PSTR("AT+CWMODE=1\r\n"), COMMAND_BUFFER_SIZE);
+        strncpy_P(response_buffer,PSTR("OK"), COMMAND_BUFFER_SIZE);
         if(expect_response_to_command(request_buffer,
                                       strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                       response_buffer,
@@ -198,7 +198,7 @@ bool ESP8266::setup_device(){
     
     // Now join the house access point
     Serial.print(F("ESP8266 - Checking that we are on the correct network..."));
-    snprintf_P(request_buffer, COMMAND_BUFFER_SIZE,PSTR("AT+CWJAP?\r\n"));
+    strncpy_P(request_buffer,PSTR("AT+CWJAP?\r\n"), COMMAND_BUFFER_SIZE);
     snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("+CWJAP:\"%s\""),station.ssid);
     if(expect_response_to_command(request_buffer,
                                   strnlen(request_buffer,COMMAND_BUFFER_SIZE),
@@ -208,7 +208,7 @@ bool ESP8266::setup_device(){
     } else {
         Serial.print (F("\nESP8266 -     Not on the correct network.  Changing the WiFi settings to join network..."));
         snprintf_P(request_buffer, COMMAND_BUFFER_SIZE,PSTR("AT+CWJAP=\"%s\",\"%s\"\r\n"),station.ssid,station.password);
-        snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("OK"));
+        strncpy_P(response_buffer,PSTR("OK"),COMMAND_BUFFER_SIZE);
         if(expect_response_to_command(request_buffer,
                                       strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                       response_buffer,
@@ -224,8 +224,8 @@ bool ESP8266::setup_device(){
     
     // Set ourselves up to mux connections into our little server
     Serial.print(F("ESP8266 - Checking the CIPMUX Settings..."));
-    snprintf_P(request_buffer, COMMAND_BUFFER_SIZE,PSTR("AT+CIPMUX?\r\n"));
-    snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("+CIPMUX:1"));
+    strncpy_P(request_buffer,PSTR("AT+CIPMUX?\r\n"), COMMAND_BUFFER_SIZE);
+    strncpy_P(response_buffer,PSTR("+CIPMUX:1"),COMMAND_BUFFER_SIZE);
     if(expect_response_to_command(request_buffer,
                                   strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                   response_buffer,
@@ -233,8 +233,8 @@ bool ESP8266::setup_device(){
         Serial.println(F("[OK]"));
     } else {
         Serial.print (F("\nESP8266 -    Server not enabled yet. Setting CIPMUX=1..."));
-        snprintf_P(request_buffer, COMMAND_BUFFER_SIZE,PSTR("AT+CIPMUX=1\r\n"));
-        snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("OK"));
+        strncpy_P(request_buffer,PSTR("AT+CIPMUX=1\r\n"), COMMAND_BUFFER_SIZE);
+        strncpy_P(response_buffer,PSTR("OK"),COMMAND_BUFFER_SIZE);
         if(expect_response_to_command(request_buffer,
                                       strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                       response_buffer,
@@ -251,7 +251,7 @@ bool ESP8266::setup_device(){
     // Now setup the CIP Server
     Serial.print(F("ESP8266 - Setting server maxconns..."));
     snprintf_P(request_buffer, COMMAND_BUFFER_SIZE,PSTR("AT+CIPSERVERMAXCONN=%d\r\n"),server.maxconns);
-    snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("OK"));
+    strncpy_P(response_buffer,PSTR("OK"),COMMAND_BUFFER_SIZE);
     if(expect_response_to_command(request_buffer,
                                   strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                   response_buffer,
@@ -266,7 +266,7 @@ bool ESP8266::setup_device(){
     // Now setup the CIP Server
     Serial.print(F("ESP8266 - Configuring my server on port 8080..."));
     snprintf_P(request_buffer, COMMAND_BUFFER_SIZE,PSTR("AT+CIPSERVER=1,%d\r\n"),server.port);
-    snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("OK"));
+    strncpy_P(response_buffer,PSTR("OK"),COMMAND_BUFFER_SIZE);
     if(expect_response_to_command(request_buffer,
                                   strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                   response_buffer,
@@ -326,7 +326,7 @@ void ESP8266::send_output_queue(unsigned char channel){
     
     // Now close the connection, printing a warning if I don't see an "OK" in response
     snprintf_P(write_command_string, COMMAND_BUFFER_SIZE, PSTR("AT+CIPCLOSE=%d\r\n"),channel);
-    snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("OK"));
+    strncpy_P(response_buffer,PSTR("OK"),COMMAND_BUFFER_SIZE);
     if(expect_response_to_command(write_command_string,
                                   strnlen(write_command_string,COMMAND_BUFFER_SIZE),
                                   response_buffer,
@@ -424,13 +424,13 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
       prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
     } else if(strstr_P(prefetch_data_fields[i], PSTR("conctd"))){
       if(this->is_network_connected()){
-        snprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len),
-                    buffer_size_remaining,
-                    PSTR("conctd:true,\n"));
+        strncpy_P( (prefetch_output_buffer+prefetch_output_buffer_len),
+                    PSTR("conctd:true,\n"),
+                    buffer_size_remaining);
       } else {
-        snprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len), 
-                   buffer_size_remaining,
-                   PSTR("conctd:false,\n"));
+        strncpy_P( (prefetch_output_buffer+prefetch_output_buffer_len),
+                   PSTR("conctd:false,\n"), 
+                   buffer_size_remaining);
       }
       prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
     }else if( (strstr_P(prefetch_data_fields[i], PSTR("ipaddr")) ||
@@ -510,7 +510,7 @@ void ESP8266::query_network_ssid(){
 bool ESP8266::is_network_connected(){
   char request_buffer[COMMAND_BUFFER_SIZE];
   char response_buffer[COMMAND_BUFFER_SIZE];
-  sprintf_P(request_buffer, PSTR("AT+CWJAP?\r\n"));
+  strcpy_P(request_buffer, PSTR("AT+CWJAP?\r\n"));
   sprintf_P(response_buffer,PSTR("+CWJAP:\"%s\""),station.ssid);
   return expect_response_to_command(request_buffer,
                                   strnlen(request_buffer,COMMAND_BUFFER_SIZE),
@@ -678,11 +678,11 @@ void ESP8266::send_networks_list(unsigned char channel){
   char response_line[MAX_RESPONSE_LINE_LEN];
   
   //Setup the access point list settings
-  snprintf_P(command_to_write,COMMAND_BUFFER_SIZE,PSTR("AT+CWLAPOPT=0,2\r\n"));
+  strncpy_P(command_to_write,PSTR("AT+CWLAPOPT=0,2\r\n"),COMMAND_BUFFER_SIZE);
   write_port(command_to_write,strnlen(command_to_write,COMMAND_BUFFER_SIZE));
   
   //Request the access point list
-  snprintf_P(command_to_write, COMMAND_BUFFER_SIZE,PSTR("AT+CWLAP\r\n"));
+  strncpy_P(command_to_write,PSTR("AT+CWLAP\r\n"), COMMAND_BUFFER_SIZE);
   write_port(command_to_write,strnlen(command_to_write,COMMAND_BUFFER_SIZE));
 
   //now, parse through till i see the my response
