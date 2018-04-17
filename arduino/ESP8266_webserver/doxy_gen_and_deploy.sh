@@ -153,7 +153,8 @@ if [ -d "html" ] && [ -f "html/index.html" ]; then
     # The ouput is redirected to /dev/null to hide any sensitive credential data
     # that might otherwise be exposed.
     echo 'Git pushing'
-    git push --force "https://${GH_REPO_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git" #> /dev/null 2>&1
+    git push --force "https://${GH_REPO_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git"
+    echo "Git push completed"
 else
     echo '' >&2
     echo 'Warning: No documentation (html) files have been found!' >&2
