@@ -131,7 +131,7 @@ bool ESP8266::expect_response_to_command(const char * command, unsigned int comm
   char response_line[MAX_RESPONSE_LINE_LEN] = "";
 
   // Write the command
-  this->write_port(command, command_len);
+  this->write_port((char *)command, command_len);
   
   // Spin for timeout_ms
   unsigned int start_time = millis();
