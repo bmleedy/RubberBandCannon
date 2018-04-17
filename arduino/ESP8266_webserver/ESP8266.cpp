@@ -35,7 +35,7 @@ ESP8266::ESP8266(AltSoftSerial *port, bool verbose){
   this->dump_reads = this->verbose;
   this->dump_writes= this->verbose;
   //todo: load the following values from eeprom instead of hard-coded defaults
-  sprintf_P(station.ssid,PSTR("leedy"));         //default SSID
+  strcpy_P(station.ssid,PSTR("leedy"));         //default SSID
   sprintf_P(station.password,PSTR("teamgoat"));  //default password
   this->server.port = DEFAULT_PORT;
   this->server.maxconns = DEFAULT_MAXCONNS;
