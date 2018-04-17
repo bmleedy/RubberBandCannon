@@ -16,6 +16,7 @@ before_install:
    - source <(curl -SLs https://raw.githubusercontent.com/adafruit/travis-ci-arduino/master/install.sh)
 
 install:
+   - arduino -h
    - arduino --install-library "AltSoftSerial","MemoryUsage","Stepper","ServoTimer2"
    - source generate_headers_from_html.bash
 
