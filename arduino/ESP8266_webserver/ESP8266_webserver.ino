@@ -185,7 +185,7 @@ char get_channel(char line[], int len){
 }
 
 /*!
- * @fn process_settings
+ * @fn void process_settings(unsigned char channel, char input_line[])
  * 
  * @brief processes the settings command for the ESP
  * 
@@ -193,7 +193,7 @@ char get_channel(char line[], int len){
  *        This is the channel on which the request for settings was transmitted.
  *        Send the response back on the same channel.
  *        
- * @param input_line
+ * @param input_line[]
  *        This is the last line read from the ESP8266, which contains the path to
  *        the setting that we want to change.
  */
