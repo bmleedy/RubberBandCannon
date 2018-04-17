@@ -13,13 +13,13 @@
  * device from my phone, tablet, the internet, or whatever.
  * 
  * RESEARCH LINKS: 
- *     https://github.com/sleemanj/ESP8266_Simple/blob/master/README.md
- *     https://nurdspace.nl/ESP8266
- *     http://www.electrodragon.com/w/images/f/ff/4a-esp8266_at_instruction_set_en_%281%29.pdf
- *     https://github.com/sleemanj/ESP8266_Simple/blob/master/arduino-wiring-diagram.jpg
- *     https://smile.amazon.com/gp/product/B01EA3UJJ4/ref=oh_aui_detailpage_o02_s00?ie=UTF8&psc=1
- *     https://hackingmajenkoblog.wordpress.com/2016/02/04/the-evils-of-arduino-strings/ 
- *     https://www.youtube.com/watch?v=ETLDW22zoMA&t=9s
+ *     https://github.com/sleemanj/ESP8266_Simple/blob/master/README.md <br>
+ *     https://nurdspace.nl/ESP8266 <br>
+ *     http://www.electrodragon.com/w/images/f/ff/4a-esp8266_at_instruction_set_en_%281%29.pdf <br>
+ *     https://github.com/sleemanj/ESP8266_Simple/blob/master/arduino-wiring-diagram.jpg <br>
+ *     https://smile.amazon.com/gp/product/B01EA3UJJ4/ref=oh_aui_detailpage_o02_s00?ie=UTF8&psc=1 <br>
+ *     https://hackingmajenkoblog.wordpress.com/2016/02/04/the-evils-of-arduino-strings/ <br>
+ *     https://www.youtube.com/watch?v=ETLDW22zoMA&t=9s <br>
  * 
  * ESP8266 SETUP:
  *     Default baud rate on the chips: 115200bps
@@ -55,7 +55,6 @@
  */
 
 
-
 //! @todo Scrub all code for todo's
 //! @todo Flesh out webserver stack - make more reliable
 //! @todo Store the website in EEPROM
@@ -88,6 +87,7 @@
 #include "ESP8266.h"
 #include "webserver_constants.h"
 #include "Rubber_Band_Shooter.h"
+
 
 #define DEBUG_MEMORY true ///<flag to enable serial port prints indicating amount of free heap.
 

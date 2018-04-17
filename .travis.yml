@@ -15,7 +15,8 @@ env:
 before_install:
    - TRAVIS_BUILD_DIR=$TRAVIS_BUILD_DIR/arduino/ESP8266_webserver
    - echo $TRAVIS_BUILD_DIR
-   - source <(curl -SLs https://raw.githubusercontent.com/adafruit/travis-ci-arduino/master/install.sh)
+#   - source <(curl -SLs https://raw.githubusercontent.com/adafruit/travis-ci-arduino/master/install.sh)
+   - source $TRAVIS_BUILD_DIR/setup_travis_env.sh
 # Install ServoTimer2 from git
    - mkdir -p ~/Arduino/libraries
    - wget https://github.com/nabontra/ServoTimer2/archive/master.zip && unzip master.zip -d ~/Arduino/libraries/

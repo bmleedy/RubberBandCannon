@@ -6,7 +6,6 @@
  */
 #include "Rubber_Band_Shooter.h"
 
-
 /*!
  * Fire the rubber band
  */
