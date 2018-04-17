@@ -92,7 +92,7 @@
 #define DEBUG_MEMORY true ///<flag to enable serial port prints indicating amount of free heap.
 
 // Serial Port Definitions
-#define PRINT_SERIAL_STREAM false ///<If set, all data to and from the ESP8266 is dumped to the debug serial port.
+#define PRINT_SERIAL_STREAM true ///<If set, all data to and from the ESP8266 is dumped to the debug serial port.
 /*! @def SERIAL_BAUD_RATE
  * Serial baud rate to talk to the ESP8266 and to the debug serial port.
  * Altsoftserial in my configration (non-ideal level shifting) is flaky at
@@ -255,7 +255,7 @@ void loop() {
     channel = get_channel(input_line,50);
 
     if(strstr_P(input_line,PSTR("GET")) != NULL){
-      Serial.print(F("|  GET received on channel ")); Serial.println(channel);
+      Serial.print(F("|  GET received on channel ")); Serial.println(channel,DEC);
       if(strstr_P(input_line,PSTR("/config"))){
         //config page has been requested
         Serial.print(F("|     config page requested"));

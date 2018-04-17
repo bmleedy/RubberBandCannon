@@ -29,6 +29,9 @@ ESP8266::ESP8266(AltSoftSerial *port, bool verbose){
   this->port = port;  //serial port
   serial_input_buffer = new CircularBuffer(SERIAL_INPUT_BUFFER_MAX_SIZE);
   this->verbose = verbose;
+  if(this->verbose){
+    Serial.print(F("| Dumping all reads and writes to the serial port!"));
+  }
   this->dump_reads = this->verbose;
   this->dump_writes= this->verbose;
   //todo: load the following values from eeprom instead of hard-coded defaults
@@ -128,7 +131,7 @@ bool ESP8266::expect_response_to_command(const char * command, unsigned int comm
   char response_line[MAX_RESPONSE_LINE_LEN] = "";
 
   // Write the command
-  this->port->write(command, command_len);
+  this->write_port(command, command_len);
   
   // Spin for timeout_ms
   unsigned int start_time = millis();
@@ -145,7 +148,7 @@ bool ESP8266::expect_response_to_command(const char * command, unsigned int comm
     }//if(read_line)
   }//while(millis...)
   
-  Serial.println(F("Response timed out"));
+  Serial.println(F("| expect_response_to_command: Response timed out"));
   return false;
 }
 
@@ -292,7 +295,8 @@ void ESP8266::send_output_queue(unsigned char channel){
     // Put the ESP int send mode
     snprintf_P(write_command_string, COMMAND_BUFFER_SIZE, 
                                      PSTR("AT+CIPSEND=%d,%d\r\n"),
-                                     channel);
+                                     channel,
+                                     output_queue.get_total_size());
     write_port(write_command_string,strnlen(write_command_string,COMMAND_BUFFER_SIZE));
 
     // Wait a bit to let it get ready
@@ -302,6 +306,7 @@ void ESP8266::send_output_queue(unsigned char channel){
     string_element data_to_write;
     //while we can retrieve things from the output queue
     while(output_queue.get_element(&data_to_write)){
+      if(this->verbose){Serial.print("Outputing queue element size ");Serial.println(data_to_write.string_length);}
       if(data_to_write.is_progmem){
         for(int i=0;i<data_to_write.string_length;i++){
           char byte_to_write = pgm_read_byte(data_to_write.pointer + i);
