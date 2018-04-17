@@ -14,10 +14,13 @@ env:
 
 before_install:
    - source <(curl -SLs https://raw.githubusercontent.com/adafruit/travis-ci-arduino/master/install.sh)
+# Install ServoTimer2 from git
+   - mkdir -p ~/Arduino/libraries
+   - wget https://github.com/nabontra/ServoTimer2/archive/master.zip && unzip master.zip -d ~/Arduino/libraries/
 
 install:
-   - arduino -h
-   - arduino --install-library "AltSoftSerial","MemoryUsage","Stepper","ServoTimer2"
+# https://github.com/arduino/Arduino/blob/master/build/shared/manpage.adoc
+   - arduino --install-library "AltSoftSerial","MemoryUsage","Stepper"
    - source generate_headers_from_html.bash
 
 script:
