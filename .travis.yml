@@ -31,5 +31,7 @@ script:
 
 # Generate and deploy documentation
 after_success:
+  - echo TRAVIS_BUILD_DIR is ${TRAVIS_BUILD_DIR}
+  - export DOXYFILE="${TRAVIS_BUILD_DIR}/Doxyfile
   - source <(curl -SLs  https://raw.githubusercontent.com/adafruit/travis-ci-arduino/master/library_check.sh)
   - source <(curl -SLs  https://raw.githubusercontent.com/adafruit/travis-ci-arduino/master/doxy_gen_and_deploy.sh)
