@@ -24,7 +24,7 @@ install:
    - cd $TRAVIS_BUILD_DIR/arduino/ESP8266_webserver/ && source generate_headers_from_html.bash
 
 script:
-   -cd $TRAVIS_BUILD_DIR/arduino/ESP8266_webserver/ && build_main_platforms
+   - cd $TRAVIS_BUILD_DIR/arduino/ESP8266_webserver/ && build_main_platforms
 
 # Generate and deploy documentation
 after_success:
