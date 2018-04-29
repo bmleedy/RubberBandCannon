@@ -26,10 +26,10 @@
  * Armed hammer position, in degrees
  * hammer servo - SG90 micro servo
  * fire direction = positive (travel is 0-180deg)*/
-#define ARMED_HAMMER_POSITION 35
+#define ARMED_HAMMER_POSITION 120
 /*! @def FIRE_HAMMER_POSITION
  * Fire hammer position, in degrees*/
-#define FIRE_HAMMER_POSITION 150
+#define FIRE_HAMMER_POSITION 5
 /*! @def HAMMER_PIN
  * must be a PWM pin*/
 #define HAMMER_PIN 3

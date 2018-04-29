@@ -7,23 +7,16 @@
       height: 20px;
     }
     </style>
-    <link rel="icon" type="image/png" href="https://s3-us-west-2.amazonaws.com/rubberbandcannon/Cannon_icon_64.png">
     <title>Rubber Band Cannon Setup Page</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <body>
-    <img src="https://cdn.pixabay.com/photo/2014/10/03/17/16/gear-472006_1280.jpg" height="150" alt="gears image">
-    <br>
     <h1>Network Status</h1>
       <ul>
         <li>SSID: <span class="ssid__"></span></li>
         <li>Connected?  <span class="conctd"></span></li>
-        <li>IP Address: <span class="ipaddr"></span></li>
-        <li>MAC Address: <span class="macadr"></span></li>
+        <li>IP: <span class="ipaddr"></span></li>
+        <li>MAC: <span class="macadr"></span></li>
         <li>Port: <span class="port__"></span></li>
-        <li id="targeting_link">Link to targeting page: http://<span class="ipaddr"></span>:<span class="port__"></span></li>
-        <li><input type="button" onclick="fetchNetworks()" value="Fetch Networks">
-            <p id="network_list">Click "Fetch Networks" to fill this list.</p>
-        </li>
       </ul>
     <h1>Network Setup</h1>
       <ul>
@@ -46,13 +39,10 @@
                            ipaddr:"192.168.1.25",
                            macadr:"DE:AD:BE:EF:AB:BA",
                            port__:8080,
-                           tgt_im:"https://s3-us-west-2.amazonaws.com/rubberbandcannon/rubberband.jpg",
-                           confim:"https://cdn.pixabay.com/photo/2014/10/03/17/16/gear-472006_1280.jpg",
 //FETCHDATA_END
       };
 //    //change content or values for tags with prefetch classes
       function render_prefetch(key,value){
-//      console.log("prefetch called with name " + key);
         fieldstofill = document.getElementsByClassName(key);
         for (var i=0; i < fieldstofill.length; i++){
           if(fieldstofill[i].tagName.toLowerCase() == "span" ){
@@ -67,29 +57,18 @@
       for(var i=0; i < keys.length; i++){
         render_prefetch(keys[i],prefetch_data[keys[i]]); 
       }
-//    // Callback to fetch network list from the ESP8266
-      function fetchNetworks(myarg) {
-        geturl = window.location;
-        var baseUrl = geturl.protocol + "//" + geturl.host + "/status/networks";
-        $.get(baseUrl);
-      }
       function submitchange(form_id) {
 //      https://stackoverflow.com/questions/18169933/submit-form-without-reloading-page
         console.log("submitting form " + form_id);
         var http = new XMLHttpRequest();
-        http.open("POST", "settings/" + form_id, true);
-        http.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-        var params = form_id + "=" + document.getElementById(form_id).value;
-        http.send(params);
-        http.onload = function() {
-          alert(http.responseText);
-        }
+//        http.open("POST", "settings/" + form_id, true);
+//        http.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+//        var params = form_id + "=" + document.getElementById(form_id).value;
+//        http.send(params);
+//        http.onload = function() {
+//          alert(http.responseText);
+//        }
       }
-      function fetchNetworks() {
-        console.log("Fetching list of networks");
-      }
-      linkstring = "Link to targeting page";
-      document.getElementById("targeting_link").innerHTML = linkstring.link("http://" + prefetch_data.ipaddr + ":" + prefetch_data.port__);
     </script>
   </footer>
 </html>

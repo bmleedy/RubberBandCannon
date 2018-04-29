@@ -8,8 +8,7 @@
  * The sole intention of this project is to shoot things with rubber bands using the coolest technology possible.
  * 
  * This program uses the ESP8266 class to serve up a website. The
- * eventual objective is to merge this code with 
- * RubberBandTerminator.ino to control the rubber band launching
+ * objective is to ontrol the rubber band launching
  * device from my phone, tablet, the internet, or whatever.
  * 
  * RESEARCH LINKS: 
@@ -81,11 +80,12 @@
 //! @todo Make a custom icon for the project.
 //! @todo Try to do auto-targeting with camera image        
 //! @todo Add fuzz testing of inputs
+//! @todo fix the case on prefetch length #defines
+//! @todo fix the problem with declaring prefetch length as ints
 
 #include <AltSoftSerial.h>
 #include <MemoryUsage.h>
 #include "ESP8266.h"
-#include "webserver_constants.h"
 #include "Rubber_Band_Shooter.h"
 
 
@@ -248,7 +248,7 @@ void loop() {
 
   
   // Read a line (delimited by '\n') from the ESP8266
-  if(esp->read_line(input_line)){
+  if(esp->read_line(input_line,SERIAL_INPUT_BUFFER_MAX_SIZE)){
     //Serial.print("Input Line length:  ");Serial.println(input_line->length());
 
     //First, parse out the connection channel, zero of none is found
@@ -259,9 +259,13 @@ void loop() {
       if(strstr_P(input_line,PSTR("/config"))){
         //config page has been requested
         Serial.print(F("|     config page requested"));
-        esp->send_http_200_with_prefetch(channel,(char *)config_website_text_0,(sizeof(static_website_text_0)-1),
-                                        (char *)config_website_text_2,(sizeof(static_website_text_2)-1),
-                                        config_website_prefetch, (sizeof(config_website_prefetch) / sizeof(config_website_prefetch[0])));
+        //esp->send_http_200_with_prefetch(channel,(char *)config_website_text_0,(sizeof(static_website_text_0)-1),
+        //                                (char *)config_website_text_2,(sizeof(static_website_text_2)-1),
+        //                                config_website_prefetch, (sizeof(config_website_prefetch) / sizeof(config_website_prefetch[0])));
+        esp->send_http_200_with_prefetch(channel,(char *)config_website_text_0,config_website_text_0_len,
+                                        (char *)config_website_text_2,config_website_text_2_len,
+                                        config_website_prefetch, config_website_PREFETCH_LEN);
+
       } else if (strstr_P(input_line,PSTR("/info/networks"))){
         esp->send_networks_list(channel);
       } else {
@@ -278,6 +282,7 @@ void loop() {
         } else if(strstr_P(input_line,PSTR("tilt_down")) != NULL){
           Serial.println(F("tilt_down"));
           shooter->turn_down();
+          Serial.println(F("tilted_down"));
         } else if(strstr_P(input_line,PSTR("pan_right")) != NULL){
           Serial.println(F("pan_right"));
           shooter->turn_right();
@@ -294,7 +299,9 @@ void loop() {
           Serial.println(F("OTHER"));
         }
         //todo: only refresh a status section on form button submit: 
+        Serial.println(F("| Sending blank HTTP200 response"));
         esp->send_http_200_static(channel,(char *)blank_website_text,(sizeof(blank_website_text)-1));
+        Serial.println(F("| Sent blank HTTP200 response"));
         Serial.print(F("'| Free: "));Serial.println(mu_freeRam());
       }
     }

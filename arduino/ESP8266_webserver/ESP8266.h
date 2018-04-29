@@ -40,13 +40,13 @@
  *    to the ESP8266 serial port.  It was originally used when I needed to prefetch
  *    dynamic data for my website, but now it's used for any thing the current 
  *    method needs to queue up before sending an HTTP response.*/
-#define PREFETCH_OUTPUT_BUFFER_SIZE  100  //! @def
+#define PREFETCH_OUTPUT_BUFFER_SIZE  120  //! @def
 /*! @def MAX_RESPONSE_LINE_LEN
  * the longest single line we expect in a response, including "\r\n\0".  
  *  This is the longest length of line I expect to receive back from the 
  * ESP8266 in response to my command.  It does not include the length of web
  * requests, which might have longer line lengths.*/
-#define MAX_RESPONSE_LINE_LEN 50
+#define MAX_RESPONSE_LINE_LEN 100
 /*! @def MAX_OUTPUT_QUEUE_LENGTH
  *  My output queue is an array of pointers to elements of data I will output
  *  via the ESP8266 serial port.  Minimize this to save on class memory footprint.*/
@@ -160,7 +160,8 @@ public:
   bool buf_get(char * data);
   bool is_empty();
   bool is_full();
-  void read_buffer_to_string(char string[]);
+  unsigned int get_buf_size(){return buf_size;}
+  void read_buffer_to_string(char string[], unsigned int max_size);
   
 };
 
@@ -231,11 +232,11 @@ public:
     void send_http_200_static(unsigned char channel,char page_data[],unsigned int page_data_len);
     void send_http_200_with_prefetch(unsigned char channel,char page_data_0[], unsigned int page_data_0_len,
                                                            char page_data_2[], unsigned int page_data_2_len,
-                                                           const char prefetch_data_fields[][7], 
+                                                           const char* const prefetch_data_fields[], 
                                                            unsigned int num_prefetch_data_fields);
     void send_networks_list(unsigned char channel);
-    bool read_line(char line_buffer[]);
-    bool read_line(char line_buffer[], unsigned int timeout_ms);
+    bool read_line(char line_buffer[], unsigned int line_buffer_size);
+    bool read_line(char line_buffer[], unsigned int line_buffer_size, unsigned int timeout_ms);
     void clear_buffer();
     bool set_station_ssid__(char new_ssid[]);
     bool set_station_passwd(char new_password[]);
@@ -243,7 +244,7 @@ public:
 private:
     bool expect_response_to_command(const char * command, unsigned int command_len,
                                     const char * desired_response,
-                                    unsigned int timeout_ms=2000);
+                                    unsigned int timeout_ms);
     bool setup_device();
     void send_output_queue(unsigned char channel);
     char read_port();

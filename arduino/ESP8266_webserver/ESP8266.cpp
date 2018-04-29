@@ -37,11 +37,14 @@ ESP8266::ESP8266(AltSoftSerial *port, bool verbose){
   //todo: load the following values from eeprom instead of hard-coded defaults
   strcpy_P(station.ssid,PSTR("leedy"));         //default SSID
   strcpy_P(station.password,PSTR("teamgoat"));  //default password
+  strcpy_P(station.macaddr, PSTR("dc:4f:22:11:e9:64"));
+  strcpy_P(station.ip, PSTR("192.168.1.25"));
   this->server.port = DEFAULT_PORT;
   this->server.maxconns = DEFAULT_MAXCONNS;
 
   this->setup_device();
 }
+
 
 /*!
  *  Read all data avalable on the serial port.  If I encounter
@@ -55,7 +58,7 @@ ESP8266::ESP8266(AltSoftSerial *port, bool verbose){
  *         
  *  @return TRUE if a line was read successfully
  */
-bool ESP8266::read_line(char line_buffer[]){
+bool ESP8266::read_line(char line_buffer[], unsigned int line_buffer_size){
   //todo: add max length to copy for buffer as an arg.
   char latest_byte = '\0';
   while (this->port->available()) {
@@ -67,7 +70,7 @@ bool ESP8266::read_line(char line_buffer[]){
     // If I just read the end of line char, write out the line,
     //   clearing out that buffer space.
     if(latest_byte == '\n') {
-      serial_input_buffer->read_buffer_to_string(line_buffer);
+      serial_input_buffer->read_buffer_to_string(line_buffer, line_buffer_size);
       return true;
     }
   }
@@ -86,11 +89,11 @@ bool ESP8266::read_line(char line_buffer[]){
  *         
  *  @returns TRUE if a line was read successfully
  */
-bool ESP8266::read_line(char line_buffer[], unsigned int timeout_ms){
+bool ESP8266::read_line(char line_buffer[], unsigned int line_buffer_size, unsigned int timeout_ms){
   unsigned int start_time = millis();
 
   while( (millis() - start_time) <= timeout_ms ){
-    if(read_line(line_buffer))
+    if(read_line(line_buffer, line_buffer_size))
       return true;
     else
       delay(2);  //chill for 2 ms
@@ -136,7 +139,7 @@ bool ESP8266::expect_response_to_command(const char * command, unsigned int comm
   // Spin for timeout_ms
   unsigned int start_time = millis();
   while((millis() - start_time) < timeout_ms){
-    if(this->read_line(response_line)){
+    if(this->read_line(response_line,MAX_RESPONSE_LINE_LEN)){
       // a line is found
       if(strstr(response_line,desired_response) != NULL) {
         //line has response string, return success
@@ -146,8 +149,8 @@ bool ESP8266::expect_response_to_command(const char * command, unsigned int comm
         // continue reading more lines
       }
     }//if(read_line)
+    delay(1);
   }//while(millis...)
-  
   Serial.println(F("| expect_response_to_command: Response timed out"));
   return false;
 }
@@ -166,7 +169,7 @@ bool ESP8266::setup_device(){
    
     // Get a response from anyone
     Serial.print(F("ESP8266 - Waiting for a response from the Wifi Device..."));
-    while(!expect_response_to_command("AT\r\n",4,"OK")){
+    while(!expect_response_to_command("AT\r\n",4,"OK",2000)){
         delay(1000);
     }
     Serial.println(F("[OK]"));
@@ -177,7 +180,7 @@ bool ESP8266::setup_device(){
     strncpy_P(response_buffer,PSTR("+CWMODE:1"),COMMAND_BUFFER_SIZE);
     if(expect_response_to_command(request_buffer,
                                   strnlen(request_buffer,COMMAND_BUFFER_SIZE),
-                                  response_buffer)){
+                                  response_buffer,2000)){
         Serial.println(F("[OK]"));
     } else {
         Serial.print (F("\nESP8266 -    Setting the mode to 'client mode'"));
@@ -185,7 +188,7 @@ bool ESP8266::setup_device(){
         strncpy_P(response_buffer,PSTR("OK"), COMMAND_BUFFER_SIZE);
         if(expect_response_to_command(request_buffer,
                                       strnlen(request_buffer,COMMAND_BUFFER_SIZE),
-                                      response_buffer)){
+                                      response_buffer,2000)){
             Serial.println(F("[OK]"));
         }
         else {
@@ -200,7 +203,7 @@ bool ESP8266::setup_device(){
     snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("+CWJAP:\"%s\""),station.ssid);
     if(expect_response_to_command(request_buffer,
                                   strnlen(request_buffer,COMMAND_BUFFER_SIZE),
-                                  response_buffer)){
+                                  response_buffer,2000)){
         Serial.println(F("[OK]"));
     } else {
         Serial.print (F("\nESP8266 -     Not on the correct network.  Changing the WiFi settings to join network..."));
@@ -224,7 +227,7 @@ bool ESP8266::setup_device(){
     strncpy_P(response_buffer,PSTR("+CIPMUX:1"),COMMAND_BUFFER_SIZE);
     if(expect_response_to_command(request_buffer,
                                   strnlen(request_buffer,COMMAND_BUFFER_SIZE),
-                                  response_buffer)){
+                                  response_buffer,2000)){
         Serial.println(F("[OK]"));
     } else {
         Serial.print (F("\nESP8266 -    Server not enabled yet. Setting CIPMUX=1..."));
@@ -299,7 +302,7 @@ void ESP8266::send_output_queue(unsigned char channel){
     string_element data_to_write;
     //while we can retrieve things from the output queue
     while(output_queue.get_element(&data_to_write)){
-      if(this->verbose){Serial.print("Outputing queue element size ");Serial.println(data_to_write.string_length);}
+      if(this->verbose){Serial.print("| Outputing queue element size ");Serial.println(data_to_write.string_length);}
       if(data_to_write.is_progmem){
         for(unsigned int i=0;i<data_to_write.string_length;i++){
           char byte_to_write = pgm_read_byte(data_to_write.pointer + i);
@@ -322,7 +325,7 @@ void ESP8266::send_output_queue(unsigned char channel){
     strncpy_P(response_buffer,PSTR("OK"),COMMAND_BUFFER_SIZE);
     if(expect_response_to_command(write_command_string,
                                   strnlen(write_command_string,COMMAND_BUFFER_SIZE),
-                                  response_buffer)){
+                                  response_buffer,1000)){
         //Closed successfully - no action needed
     } else {
         //Print a warning - if this happens often, potentially put this into a loop to make sure we close channels
@@ -380,7 +383,7 @@ void ESP8266::send_http_200_static(unsigned char channel, char page_data[], unsi
 void ESP8266::send_http_200_with_prefetch(unsigned char channel,
                                           char page_data_0[], unsigned int page_data_0_len,
                                           char page_data_2[], unsigned int page_data_2_len,
-                                          const char prefetch_data_fields[][7], unsigned int num_prefetch_data_fields){
+                                          const char* const prefetch_data_fields[], unsigned int num_prefetch_data_fields){
 
   // start-line per https://tools.ietf.org/html/rfc2616#page-31 
   this->output_queue.add_element((char *)http_200_start_line, HTTP_200_START_LINE_LEN, true);
@@ -397,57 +400,75 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
   //   to the buffer string.
   prefetch_output_buffer_len = 0; //clear the output buffer
   bool have_queried_mac = false;  //only queried to get mac and IP
-  int buffer_size_remaining = PREFETCH_OUTPUT_BUFFER_SIZE;
+  int buffer_size_remaining;
+  
   for(unsigned int i=0; i<num_prefetch_data_fields; i++){
 
     // check
     buffer_size_remaining = PREFETCH_OUTPUT_BUFFER_SIZE - prefetch_output_buffer_len;
     if(buffer_size_remaining < 20){
       Serial.println(F("| WARNING: prefetch output buffer is running out of space!"));
+      Serial.println(PREFETCH_OUTPUT_BUFFER_SIZE);
+      Serial.println(prefetch_output_buffer_len);
     }
+
+    char prefetch_field_name[10];
+
+    //ref: https://www.arduino.cc/reference/en/language/variables/utilities/progmem/
+    strncpy_P(prefetch_field_name, (char*)pgm_read_word(&(prefetch_data_fields[i])), 7);
+    prefetch_field_name[7] = '\0';
+
+//    if(verbose){Serial.print(F("| Field name: ")); Serial.write(prefetch_field_name,6);Serial.println("");}
     
-    if(strstr_P(prefetch_data_fields[i], PSTR("ssid__"))){
-      this->query_network_ssid();
+    if(strstr_P(prefetch_field_name, PSTR("ssid__"))){
+//      Serial.print(F("| Starting Serial output buffer len: "));Serial.println(prefetch_output_buffer_len);
+      //this->query_network_ssid();
       snprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len),
                   buffer_size_remaining,
-                  "%s:%s,\n",
-                  prefetch_data_fields[i],
+                  PSTR("%s:\"%s\","),
+                  prefetch_field_name,
                   station.ssid);
       prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
-    } else if(strstr_P(prefetch_data_fields[i], PSTR("conctd"))){
+    } else if(strstr_P(prefetch_field_name, PSTR("conctd"))){
       if(this->is_network_connected()){
         strncpy_P( (prefetch_output_buffer+prefetch_output_buffer_len),
-                    PSTR("conctd:true,\n"),
+                    PSTR("conctd:true,"),
                     buffer_size_remaining);
       } else {
         strncpy_P( (prefetch_output_buffer+prefetch_output_buffer_len),
-                   PSTR("conctd:false,\n"), 
+                   PSTR("conctd:false,"), 
                    buffer_size_remaining);
       }
       prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
-    }else if( (strstr_P(prefetch_data_fields[i], PSTR("ipaddr")) ||
-              strstr_P(prefetch_data_fields[i],  PSTR("macadr"))) && !have_queried_mac){
-      this->query_ip_and_mac();
-      have_queried_mac = true; //only do one query to refresh IP and mac
-      //todo: make this an add_string_to_buffer method
-      snprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len), 
-                  buffer_size_remaining,
-                  PSTR("ipaddr:%s,\n"),station.ip);
-      prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
-      snprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len),
-                  buffer_size_remaining,
-                  PSTR("macaddr:%s,\n"),station.macaddr);
-      prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
-    }else if(strstr_P(prefetch_data_fields[i], PSTR("port__"))){
+    }else if( (strstr_P(prefetch_field_name, PSTR("ipaddr")) ||
+              strstr_P(prefetch_field_name,  PSTR("macadr")))){
+      if(!have_queried_mac){
+        //this->query_ip_and_mac();//todo: re-enable
+        have_queried_mac = true; //only do one query to refresh IP and mac
+        //todo: make this an add_string_to_buffer method
+        snprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len), 
+                    buffer_size_remaining,
+                    PSTR("ipaddr:\"%s\","),station.ip);
+        prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
+        snprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len),
+                    buffer_size_remaining,
+                    PSTR("macaddr:\"%s\","),station.macaddr);
+        prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
+      }
+    }else if(strstr_P(prefetch_field_name, PSTR("port__"))){
       //todo: make this an add_int_to_buffer method
       snprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len), 
                  buffer_size_remaining,
-                 PSTR("port__:%d,\n"),server.port);
+                 PSTR("port__:%d"),server.port);
       prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
     }else{
-      Serial.print(F("Prefetch field not found: "));Serial.write(prefetch_data_fields[i],7);
+      Serial.print(F("| Prefetch field not found: "));Serial.write(prefetch_field_name,7);Serial.println("");
     } 
+//    Serial.print(F("| Serial input buffer length after: "));Serial.println(prefetch_output_buffer_len);
+//    Serial.print(F("|  Prefetch output buffer ["));Serial.write(prefetch_output_buffer);Serial.println("]");
   }//for(prefetch_data_fields)
+  
+  //add the prefetch output buffer to the output queue
   this->output_queue.add_element(prefetch_output_buffer, prefetch_output_buffer_len, false);
 
   // Add the last chunk of website page data
@@ -475,7 +496,7 @@ void ESP8266::query_network_ssid(){
   // Read lines from the ESP8266 until we time out or succeed
   unsigned int start_time = millis();
   while((millis() - start_time) < timeout_ms){
-    if(this->read_line(input_buffer)){
+    if(this->read_line(input_buffer,MAX_RESPONSE_LINE_LEN)){
       // a line is found
       if(strstr_P(input_buffer,PSTR("+CWJAP")) != NULL) {
           //Response is on this line, parse out the strings
@@ -506,7 +527,7 @@ bool ESP8266::is_network_connected(){
   sprintf_P(response_buffer,PSTR("+CWJAP:\"%s\""),station.ssid);
   return expect_response_to_command(request_buffer,
                                   strnlen(request_buffer,COMMAND_BUFFER_SIZE),
-                                  response_buffer);
+                                  response_buffer,2000);
 }
 
 
@@ -526,7 +547,7 @@ void ESP8266::query_ip_and_mac(){
 
   unsigned int start_time = millis();
   while((millis() - start_time) < timeout_ms){
-    if(this->read_line(input_buffer)){
+    if(this->read_line(input_buffer, MAX_RESPONSE_LINE_LEN)){
       // a line is found
       if(strstr_P(input_buffer,PSTR("+CWJAP")) != NULL) {
         if(strstr_P(input_buffer,PSTR("STAIP")) != NULL){
@@ -609,7 +630,7 @@ bool ESP8266::set_station_ssid__(char new_ssid[]){
       //return success
       return true;
     }else{
-      Serial.println(F("Attempt to set SSID failed"));
+      Serial.println(F("| Attempt to set SSID failed"));
     }
   }
   return false; //we timed out and did not succeed.
@@ -645,7 +666,7 @@ bool ESP8266::set_station_passwd(char new_password[]){
       //return success
       return true;
     }else{
-      Serial.println(F("Attempt to set SSID failed"));
+      Serial.println(F("| Attempt to set password failed"));
     }
   }
   return false; //we timed out and did not succeed.
@@ -871,13 +892,13 @@ bool CircularBuffer::is_full(){
  * @param string
  *        the string to which we're copying
  */
-void CircularBuffer::read_buffer_to_string(char string[]){
-  int iter = 0;
-  while(!this->is_empty()){
+void CircularBuffer::read_buffer_to_string(char string[], unsigned int max_size){
+  unsigned int iter = 0;
+  while(!this->is_empty() && iter < max_size){
+    // only read out as far as the length of the buffer that I'm writing.
     this->buf_get(string+iter);
     iter++;
   }
   string[iter]='\0';
-  //!@todo this assumes the target is as big as input_max_size plus one.  not safe!
 }
 
