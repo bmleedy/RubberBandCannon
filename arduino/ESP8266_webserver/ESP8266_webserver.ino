@@ -92,7 +92,7 @@
 #define DEBUG_MEMORY true ///<flag to enable serial port prints indicating amount of free heap.
 
 // Serial Port Definitions
-#define PRINT_SERIAL_STREAM true ///<If set, all data to and from the ESP8266 is dumped to the debug serial port.
+#define PRINT_SERIAL_STREAM false ///<If set, all data to and from the ESP8266 is dumped to the debug serial port.
 /*! @def SERIAL_BAUD_RATE
  * Serial baud rate to talk to the ESP8266 and to the debug serial port.
  * Altsoftserial in my configration (non-ideal level shifting) is flaky at
@@ -203,34 +203,42 @@ void process_settings(unsigned char channel, char input_line[]) {
   char* read_pointer = NULL;
 
   // Read the remaining lines, until I find my parameter, or I time out:
-  if(strstr_P(input_line,PSTR("ssid__"))){
+  if(strstr_P(input_line,PSTR("ssid__")) != NULL){
     Serial.println(F("| received an SSID setting request"));
-    while(esp->read_line(input_line,1000)){
-      if(strstr_P,PSTR("ssid__=")){
+    do{
+      //todo: make the webpage submit both of these requests at once.
+      Serial.print(F("| request line: "));Serial.write(input_line,strlen(input_line));
+      if(strstr_P(input_line,PSTR("ssid__=")) != NULL){
         //found the setting string
         read_pointer = strtok(input_line,"="); //up to the start of the SSID
         read_pointer = strtok(NULL,"="); //the SSID field
+        read_pointer = strtok(read_pointer,"\n"); //trimming the trailing newline
         if(esp->set_station_ssid__(read_pointer)){
-          esp->send_http_200_static(channel,(char *)success_msg,(sizeof(success_msg)-1));
+          //No point in sending a response - SSID change will break the connection.
+          Serial.println(F("| Set Station SSID succeeded!"));
+          break;
         } else {
           esp->send_http_200_static(channel,(char *)failure_msg,(sizeof(failure_msg)-1));
         }
       }//if(ssid)
-    }//while(read_line)
-  } else if(strstr_P(input_line,PSTR("passwd"))){
+    }while(esp->read_line(input_line,SERIAL_INPUT_BUFFER_MAX_SIZE, 10000));//while(read_line)
+  } else if(strstr_P(input_line,PSTR("paswrd")) != NULL){
     Serial.println(F("| received a password setting request"));
-    while(esp->read_line(input_line,1000)){
-      if(strstr_P,PSTR("passwd=")){
+    do{
+      if(strstr_P(input_line,PSTR("paswrd=")) != NULL){
         //found the setting string
+        Serial.print(F("| Input Line: "));Serial.write(input_line,strlen(input_line));Serial.println("");
         read_pointer = strtok(input_line,"="); //up to the start of the SSID
+        Serial.print(F("| first_read_pointer: "));Serial.write(read_pointer,strlen(read_pointer));Serial.println("");
         read_pointer = strtok(NULL,"="); //the SSID field
+        Serial.print(F("| second_read_pointer: "));Serial.write(read_pointer,strlen(read_pointer));Serial.println("");
         if(esp->set_station_passwd(read_pointer)){
           esp->send_http_200_static(channel,(char *)success_msg,(sizeof(success_msg)-1));
         } else {
           esp->send_http_200_static(channel,(char *)failure_msg,(sizeof(failure_msg)-1));
         }
       }//if(ssid)
-    }//while(read_line)
+    }while(esp->read_line(input_line,SERIAL_INPUT_BUFFER_MAX_SIZE,1000));//while(read_line)
   } else {
     Serial.println(F("| received an unknown setting path"));
   }

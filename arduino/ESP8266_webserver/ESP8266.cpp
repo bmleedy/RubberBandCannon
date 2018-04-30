@@ -93,11 +93,15 @@ bool ESP8266::read_line(char line_buffer[], unsigned int line_buffer_size, unsig
   unsigned int start_time = millis();
 
   while( (millis() - start_time) <= timeout_ms ){
-    if(read_line(line_buffer, line_buffer_size))
+    if(read_line(line_buffer, line_buffer_size)){
       return true;
-    else
+    }
+    else{
       delay(2);  //chill for 2 ms
+    }
+
   }
+  Serial.println(F("| read_line timed out"));
   return false;
 }
 
@@ -613,26 +617,30 @@ bool ESP8266::set_station_ssid__(char new_ssid[]){
   char command_to_send[(MAX_SSID_LENGTH+MAX_PASSWORD_LENGTH+18)];
   char desired_response[] = "OK";
   unsigned int max_attempts = 3;
-  
-  strtok(new_ssid,"\n");//remove the \n on the ssid string
+
+  Serial.print(F("| Setting new ssid: ["));Serial.write(new_ssid,strlen(new_ssid));Serial.println("]");
 
   snprintf_P(command_to_send,
              (MAX_SSID_LENGTH+MAX_PASSWORD_LENGTH+18), 
-             PSTR("AT+CWJAP_DEF=%s,%s\r\n"), 
+             PSTR("AT+CWJAP_DEF=\"%s\",\"%s\"\r\n"), 
              new_ssid, 
              this->station.password);
+
+//  Serial.print(F("| Command to Send:["));Serial.write(command_to_send,strlen(command_to_send));Serial.println("]");
+  
   for(unsigned int i=0; i<max_attempts; i++){
     if(expect_response_to_command(command_to_send, 
                                      strlen(command_to_send),
-                                     desired_response,5000)){
+                                     desired_response,10000)){
       //update my class variable
       strncpy(this->station.ssid,new_ssid,MAX_SSID_LENGTH+1);
       //return success
       return true;
     }else{
-      Serial.println(F("| Attempt to set SSID failed"));
+      Serial.print(F("| Attempt "));Serial.print(i,DEC);Serial.println(F(" to set SSID failed."));
     }
   }
+
   return false; //we timed out and did not succeed.
 }
 
@@ -651,6 +659,7 @@ bool ESP8266::set_station_passwd(char new_password[]){
   unsigned int max_attempts = 3;
   
   strtok(new_password,"\n");//remove the \n on the password string
+  Serial.print(F("| New password: "));Serial.write(new_password,strlen(new_password));Serial.println("");
 
   snprintf_P(command_to_send,
              (MAX_SSID_LENGTH+MAX_PASSWORD_LENGTH+18), 
