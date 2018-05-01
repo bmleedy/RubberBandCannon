@@ -8,24 +8,20 @@
     }
     </style>
     <title>Rubber Band Cannon Setup Page</title>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <a href="targeting">Targeting page</a>
   <body>
     <h1>Network Status</h1>
-      <ul>
-        <li>SSID: <span class="ssid__"></span></li>
-        <li>Connected?  <span class="conctd"></span></li>
-        <li>IP: <span class="ipaddr"></span></li>
-        <li>MAC: <span class="macadr"></span></li>
-        <li>Port: <span class="port__"></span></li>
-      </ul>
+    SSID: <span class="ssid__"></span><br>
+    Connected?  <span class="conctd"></span><br>
+    IP: <span class="ipaddr"></span><br>
+    MAC: <span class="macadr"></span><br>
+    Port: <span class="port__"></span><br>
+    
     <h1>Network Setup</h1>
-      <ul>
-        <li>SSID: <input class="ssid__" id="ssid__" type="text" size="15"></input>
-                  <input type="button" onclick="submitchange('ssid__')" value="Submit"></input>
-        </li>
-        <li>Password: <input class="paswrd" id="paswrd" type="password" size="15"></input>
-                      <input type="button" onclick="submitchange('paswrd')" value="Submit"></input>
+        <strong>SSID</strong>: <input class="ssid__" id="ssid__" type="text" size="15"></input>
+        <br>
+        <strong>Password</strong>: <input class="paswrd" id="paswrd" type="password" size="15"></input>
+                                   <input type="button" onclick="setpwd()" value="Submit"></input>
         </li>
       </ul>
   </body>
@@ -44,28 +40,30 @@
       function render_prefetch(key,value){
         fieldstofill=document.getElementsByClassName(key);
         for(var i=0;i<fieldstofill.length;i++){
-          if(fieldstofill[i].tagName.toLowerCase()=="span"){
+          if(fieldstofill[i].tagName.toLowerCase()=="span")
             fieldstofill[i].textContent=value;
-          }else{
+          else
             fieldstofill[i].value=value;
-          }
         }
       }
-//    //For each prefetched data element, render it into the page
       keys=Object.keys(prefetch_data);
-      for(var i=0;i<keys.length;i++){
+      for(var i=0;i<keys.length;i++)
         render_prefetch(keys[i],prefetch_data[keys[i]]); 
-      }
-      function submitchange(form_id){
-//      https://stackoverflow.com/questions/18169933/submit-form-without-reloading-page
-        console.log("submitting form "+form_id);
-        var http = new XMLHttpRequest();
-        http.open("POST","settings/"+form_id,true);
-        http.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-        var params=form_id+"="+document.getElementById(form_id).value+"\\n";
-        http.send(params);
-        http.onload=function(){
-          alert(http.responseText);
+      function setpwd(){
+        var http = new XMLHttpRequest(),
+        pwd=document.getElementById("paswrd").value,
+        sid=document.getElementById("ssid__").value,
+        params;
+        params="ssid__="+sid+","+pwd+"\\n";
+        http.open("POST","settings/ssid__",true);
+        console.log("setting password: "+params);
+        if(pwd && sid){
+          http.send(params);
+          http.onload=function(){
+            alert(http.responseText);
+          }
+        }else{
+          alert("ERROR: Blank SSID or PWD");
         }
       }
     </script>
