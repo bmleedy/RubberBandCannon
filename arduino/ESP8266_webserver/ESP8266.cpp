@@ -99,7 +99,7 @@ bool ESP8266::read_line(char line_buffer[], unsigned int line_buffer_size, unsig
     else{
       delay(2);  //chill for 2 ms
     }
-
+    Serial.print(".");
   }
   Serial.println(F("| read_line timed out"));
   return false;
@@ -421,12 +421,9 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
     //ref: https://www.arduino.cc/reference/en/language/variables/utilities/progmem/
     strncpy_P(prefetch_field_name, (char*)pgm_read_word(&(prefetch_data_fields[i])), 7);
     prefetch_field_name[7] = '\0';
-    Serial.print(F("| prefetch name: ["));Serial.write(prefetch_field_name,7);Serial.println("]");
-//    if(verbose){Serial.print(F("| Field name: ")); Serial.write(prefetch_field_name,6);Serial.println("");}
-    
+
     if(strstr_P(prefetch_field_name, PSTR("ssid__"))){
-//      Serial.print(F("| Starting Serial output buffer len: "));Serial.println(prefetch_output_buffer_len);
-      //this->query_network_ssid();
+//      //this->query_network_ssid();
       snprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len),
                   buffer_size_remaining,
                   PSTR("%s:\"%s\","),
@@ -469,8 +466,6 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
     }else{
       Serial.print(F("| Prefetch field not found: "));Serial.write(prefetch_field_name,7);Serial.println("");
     } 
-//    Serial.print(F("| Serial input buffer length after: "));Serial.println(prefetch_output_buffer_len);
-//    Serial.print(F("|  Prefetch output buffer ["));Serial.write(prefetch_output_buffer);Serial.println("]");
   }//for(prefetch_data_fields)
   
   //add the prefetch output buffer to the output queue
@@ -625,8 +620,6 @@ bool ESP8266::set_station_ssid__(char new_ssid[]){
              (MAX_SSID_LENGTH+MAX_PASSWORD_LENGTH+18), 
              PSTR("AT+CWJAP_DEF=%s\r\n"), 
              new_ssid);
-
-//  Serial.print(F("| Command to Send:["));Serial.write(command_to_send,strlen(command_to_send));Serial.println("]");
   
   for(unsigned int i=0; i<max_attempts; i++){
     if(expect_response_to_command(command_to_send, 
