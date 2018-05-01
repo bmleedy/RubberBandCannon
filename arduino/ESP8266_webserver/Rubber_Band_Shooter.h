@@ -74,7 +74,6 @@ private:
   ServoTimer2 elevation;  // create servo object to control a servo
   int elevation_command_position;
   Stepper * small_stepper;
-  String serial_input_buffer;
 
 public:
   Rubber_Band_Shooter();

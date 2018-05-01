@@ -66,17 +66,7 @@ void Rubber_Band_Shooter::turn_left(){
  * Constructor
  */
 Rubber_Band_Shooter::Rubber_Band_Shooter(){
-
-  elevation_command_position = ELEVATION_CENTER_POSITION;
-  elevation.attach(ELEVATION_PIN);  // attaches the servo on pin 9 to the servo object
-  elevation.write(map(elevation_command_position,0,180,MIN_PULSE_WIDTH,MAX_PULSE_WIDTH));
-  
-  hammer.attach(HAMMER_PIN);
-  hammer.write(map(ARMED_HAMMER_POSITION,0,180,MIN_PULSE_WIDTH,MAX_PULSE_WIDTH));
-
-  small_stepper = new Stepper(STEPS_PER_REV, 2, 6, 10, 7);
-
-  Serial.println(F("Setup complete.  Running..."));
+  Rubber_Band_Shooter(HAMMER_PIN, ELEVATION_PIN);
 }
 
 
@@ -99,5 +89,5 @@ Rubber_Band_Shooter::Rubber_Band_Shooter(unsigned char hammer_pin, unsigned char
 
   small_stepper = new Stepper(STEPS_PER_REV, 2, 6, 10, 7);
 
-  Serial.println(F("Setup complete.  Running..."));
+  Serial.println(F("| Rubber_Band_Shooter Setup complete."));
 }

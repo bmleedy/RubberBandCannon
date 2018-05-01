@@ -110,8 +110,9 @@ ESP8266 * esp; ///<This is the class used to interface the ESP.
 /*! var input_line
  * This is used to hold the most recent line read from the ESP.
  */
-//! @todo This is a big time memory waster - figure out how to eliminate this
-char input_line[SERIAL_INPUT_BUFFER_MAX_SIZE+1];
+//! @todo This is a bigtime memory waster - figure out how to eliminate this
+#define MAXIMUM_INPUT_LINE_LENGTH 200
+char input_line[MAXIMUM_INPUT_LINE_LENGTH+1];
 
 Rubber_Band_Shooter * shooter;///<This is the class used to interface rubber band shooter
 
@@ -166,7 +167,7 @@ char channel = 0; ///<The channel on which the last request to me was sent.
 void loop() {
 
   // Read a line (delimited by '\n') from the ESP8266
-  if(esp->read_line(input_line,SERIAL_INPUT_BUFFER_MAX_SIZE)){
+  if(esp->read_line(input_line,MAXIMUM_INPUT_LINE_LENGTH)){
     //Serial.print("Input Line length:  ");Serial.println(input_line->length());
 
     //First, parse out the connection channel, zero of none is found
@@ -212,7 +213,7 @@ void loop() {
           esp->send_http_200_static(channel,(char *)blank_website_text,(sizeof(blank_website_text)-1));
         } else if(strstr_P(input_line,PSTR("settings"))){
           Serial.println(F("Settings Request Received!"));
-          esp->process_settings(channel,input_line);
+          esp->process_settings(channel,input_line,MAXIMUM_INPUT_LINE_LENGTH);
         }else {
           Serial.println(F("OTHER"));
         }

@@ -775,7 +775,7 @@ char ESP8266::get_channel_from_string(char line[], int len){
  */
 //! @todo maybe pull this into the esp class
 //! @todo make these more DRY
-void ESP8266::process_settings(unsigned char channel, char input_line[]) {
+void ESP8266::process_settings(unsigned char channel, char input_line[],int input_line_size) {
   char* read_pointer = NULL;
 
   // Read the remaining lines, until I find my parameter, or I time out:
@@ -795,7 +795,7 @@ void ESP8266::process_settings(unsigned char channel, char input_line[]) {
           send_http_200_static(channel,(char *)failure_msg,(sizeof(failure_msg)-1));
         }
       }//if(ssid)
-    }while(read_line(input_line,SERIAL_INPUT_BUFFER_MAX_SIZE, 10000));//while(read_line)
+    }while(read_line(input_line,input_line_size, 10000));//while(read_line)
   } else {
     Serial.println(F("| received an unknown setting path"));
   }

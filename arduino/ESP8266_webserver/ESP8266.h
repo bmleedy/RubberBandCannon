@@ -151,7 +151,7 @@ public:
     bool set_station_ssid__(char new_ssid[]);
     bool set_station_passwd(char new_password[]);
     char get_channel_from_string(char line[], int len);
-    void process_settings(unsigned char channel, char input_line[]);
+    void process_settings(unsigned char channel, char input_line[], int input_line_size);
     
 private:
     bool expect_response_to_command(const char * command, unsigned int command_len,
