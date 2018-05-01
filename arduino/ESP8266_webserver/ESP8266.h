@@ -24,6 +24,8 @@
 #include <Arduino.h>
 #include "HardwareSerial.h"
 #include "webserver_constants.h"
+#include "CircularBuffer.h"
+#include "OutputQueue.h"
 
 /*! @def SERIAL_INPUT_BUFFER_MAX_SIZE
  *  This is the size of the buffer I will use to read data from the ESP8266.
@@ -47,10 +49,6 @@
  * ESP8266 in response to my command.  It does not include the length of web
  * requests, which might have longer line lengths.*/
 #define MAX_RESPONSE_LINE_LEN 100
-/*! @def MAX_OUTPUT_QUEUE_LENGTH
- *  My output queue is an array of pointers to elements of data I will output
- *  via the ESP8266 serial port.  Minimize this to save on class memory footprint.*/
-#define MAX_OUTPUT_QUEUE_LENGTH  20
 /*! @def MAX_SSID_LENGTH
  *  number of characters, not counting string null terminator.*/
 #define MAX_SSID_LENGTH 32
@@ -77,95 +75,6 @@
 #define DEFAULT_MAXCONNS 1
 
 //! @todo put config page values in eeprom (instead of just loading defaults at start).
-
- 
-/*! 
- * @struct string_element
- * 
- * @brief Datatype for an element in the output queue
- * 
- */
-struct string_element{
-  char * pointer;             ///<pointer to a string element
-  unsigned int string_length; ///<length of the string element
-  bool is_progmem;            ///<true if the string element is stored in progmem
-};
-
-/*!
- * @class OutputQueue
- * 
- * @brief Holds pointers to strings to be sent to the ESP serial port
- * 
- * Holds pointers to strings, their sizes, and a tally of the sizes
- * of all of the strings that need to be outputted.
- * 
- * This is a huge space saver compared to keeping an output buffer 
- * in dynamic memory, where it may topple your heap.  It's only 
- * dynamic memory usage is the compact array of pointers to strings 
- * and string lengths.
- * 
- *        
- * Usage:<pre>
- *    char string1[10] = "1234567890";
- *    char string2[3]  = "321";
- *    OutputQueue myqueue;
- *    myqueue.add_element(string1,sizeof(string1);
- *    myqueue.add_element(string2,sizeof(string2);
- *    //...etc, etc, up to max number of elements.
- *    string_element output;
- *    while(myqueue.get_element(&output)){
- *      my_method_to_use_the_output_strings(output);
- *    }</pre>
- *-----------------------------------------------------------------
- */
-class OutputQueue{
-  private:
-  string_element queue[MAX_OUTPUT_QUEUE_LENGTH];  ///<A list of pointers to elements to output
-  unsigned int queue_len;                         ///<Number of elements in the queue
-  unsigned int read_position;                     ///<Index of most recently read element
-  unsigned int total_size;                        ///<Total number of characters in the buffer
-
-  public:
-  OutputQueue();
-  void add_element(char * string, unsigned int string_len, bool is_progmem);
-  //reset queue position and length. Automatic when you get the last element.
-  void clear_elements();
-  //gets the element
-  bool get_element(string_element * output);//returns false if none are available.
-  unsigned int get_total_size();
-};
-
-
-/*!
- * @class CircularBuffer
- * 
- * @brief Ring buffer Implementation
- * 
- * Simple ring buffer to handle serial output that we want to scan for string matches.
- * 
- *-----------------------------------------------------------------
- */
-
-class CircularBuffer{
-private:
-  char * buf;             ///<pointer to the data buffer
-  unsigned int head;      ///<current location of the newest data
-  unsigned int tail;      ///<current location of the oldest data
-  unsigned int buf_size;  ///<current distance between the head and tail
-  
-public:
-  CircularBuffer(int buf_size);
-  void buf_reset();
-  bool buf_put(char data);
-  bool buf_get(char * data);
-  bool is_empty();
-  bool is_full();
-  unsigned int get_buf_size(){return buf_size;}
-  void read_buffer_to_string(char string[], unsigned int max_size);
-  
-};
-
-
 
 /*! 
  * @struct network_info
