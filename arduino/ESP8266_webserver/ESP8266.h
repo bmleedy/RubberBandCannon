@@ -135,6 +135,7 @@ private:
     void query_network_ssid();
     void query_ip_and_mac();
     bool is_network_connected();
+    char current_channel;
 
 public:
     ESP8266(AltSoftSerial *port, bool verbose);
@@ -149,6 +150,8 @@ public:
     void clear_buffer();
     bool set_station_ssid__(char new_ssid[]);
     bool set_station_passwd(char new_password[]);
+    char get_channel_from_string(char line[], int len);
+    void process_settings(unsigned char channel, char input_line[]);
     
 private:
     bool expect_response_to_command(const char * command, unsigned int command_len,

@@ -110,6 +110,7 @@ ESP8266 * esp; ///<This is the class used to interface the ESP.
 /*! var input_line
  * This is used to hold the most recent line read from the ESP.
  */
+//! @todo This is a big time memory waster - figure out how to eliminate this
 char input_line[SERIAL_INPUT_BUFFER_MAX_SIZE+1];
 
 Rubber_Band_Shooter * shooter;///<This is the class used to interface rubber band shooter
@@ -153,96 +154,6 @@ void setup() {
 
 
 
-/*!
- * @brief Gets the channel number from an ESP "IPD" line
- * 
- * Reads the input line with length len and returns the channel found, 
- * or zero if none is found.
- * 
- * @param line
- *        a pointer to the array containing a line from the ESP
- *        
- * @param len
- *        the number of characters in the line, including the '\n'
- *        
- * @return the channel found, or zero if one is not found
- */
-char get_channel(char line[], int len){
-  char string_to_parse[len]; 
-  strncpy(string_to_parse,line,len);
-  char rv = 0;
-
-  //Try to find the channel indicator
-  char * token = strstr_P(string_to_parse, PSTR("IPD,"));
-
-  if(token != NULL){
-    strtok(token,","); //this is "IPD"
-    char * chan_string = strtok(NULL,","); //this is the channel ID
-    rv = atoi(chan_string);
-  }
-  return rv;
-  
-}
-
-/*!
- * @fn void process_settings(unsigned char channel, char input_line[])
- * 
- * @brief processes the settings command for the ESP
- * 
- * @param channel
- *        This is the channel on which the request for settings was transmitted.
- *        Send the response back on the same channel.
- *        
- * @param input_line[]
- *        This is the last line read from the ESP8266, which contains the path to
- *        the setting that we want to change.
- */
-//! @todo maybe pull this into the esp class
-//! @todo make these more DRY
-void process_settings(unsigned char channel, char input_line[]) {
-  char* read_pointer = NULL;
-
-  // Read the remaining lines, until I find my parameter, or I time out:
-  if(strstr_P(input_line,PSTR("ssid__")) != NULL){
-    Serial.println(F("| received an SSID setting request"));
-    do{
-      //todo: make the webpage submit both of these requests at once.
-      //Serial.print(F("| request line: "));Serial.write(input_line,strlen(input_line));
-      if(strstr_P(input_line,PSTR("ssid__=")) != NULL){
-        //found the setting string
-        read_pointer = strtok(input_line,"="); //up to the start of the SSID
-        read_pointer = strtok(NULL,"="); //the SSID field
-        read_pointer = strtok(read_pointer,"\n"); //trimming the trailing newline
-        if(esp->set_station_ssid__(read_pointer)){
-          //No point in sending a response - SSID change will break the connection.
-          Serial.println(F("| Set Station SSID succeeded!"));
-          break;
-        } else {
-          esp->send_http_200_static(channel,(char *)failure_msg,(sizeof(failure_msg)-1));
-        }
-      }//if(ssid)
-    }while(esp->read_line(input_line,SERIAL_INPUT_BUFFER_MAX_SIZE, 10000));//while(read_line)
-  } else if(strstr_P(input_line,PSTR("paswrd")) != NULL){
-    Serial.println(F("| received a password setting request"));
-    do{
-      if(strstr_P(input_line,PSTR("paswrd=")) != NULL){
-        //found the setting string
-        Serial.print(F("| Input Line: "));Serial.write(input_line,strlen(input_line));Serial.println("");
-        read_pointer = strtok(input_line,"="); //up to the start of the SSID
-        Serial.print(F("| first_read_pointer: "));Serial.write(read_pointer,strlen(read_pointer));Serial.println("");
-        read_pointer = strtok(NULL,"="); //the SSID field
-        Serial.print(F("| second_read_pointer: "));Serial.write(read_pointer,strlen(read_pointer));Serial.println("");
-        if(esp->set_station_passwd(read_pointer)){
-          esp->send_http_200_static(channel,(char *)success_msg,(sizeof(success_msg)-1));
-        } else {
-          esp->send_http_200_static(channel,(char *)failure_msg,(sizeof(failure_msg)-1));
-        }
-      }//if(ssid)
-    }while(esp->read_line(input_line,SERIAL_INPUT_BUFFER_MAX_SIZE,1000));//while(read_line)
-  } else {
-    Serial.println(F("| received an unknown setting path"));
-  }
-}
 
 
 /*!
@@ -254,13 +165,12 @@ void process_settings(unsigned char channel, char input_line[]) {
 char channel = 0; ///<The channel on which the last request to me was sent.
 void loop() {
 
-  
   // Read a line (delimited by '\n') from the ESP8266
   if(esp->read_line(input_line,SERIAL_INPUT_BUFFER_MAX_SIZE)){
     //Serial.print("Input Line length:  ");Serial.println(input_line->length());
 
     //First, parse out the connection channel, zero of none is found
-    channel = get_channel(input_line,50);
+    channel = esp->get_channel_from_string(input_line,50);
 
     if(strstr_P(input_line,PSTR("GET")) != NULL){
       Serial.print(F("|  GET received on channel ")); Serial.println(channel,DEC);
@@ -283,29 +193,29 @@ void loop() {
         if(strstr_P(input_line,PSTR("tilt_up")) != NULL){
           Serial.println(F("tilt_up"));
           shooter->turn_up();
+          esp->send_http_200_static(channel,(char *)blank_website_text,(sizeof(blank_website_text)-1));
         } else if(strstr_P(input_line,PSTR("tilt_down")) != NULL){
           Serial.println(F("tilt_down"));
           shooter->turn_down();
-          Serial.println(F("tilted_down"));
+          esp->send_http_200_static(channel,(char *)blank_website_text,(sizeof(blank_website_text)-1));
         } else if(strstr_P(input_line,PSTR("pan_right")) != NULL){
           Serial.println(F("pan_right"));
           shooter->turn_right();
+          esp->send_http_200_static(channel,(char *)blank_website_text,(sizeof(blank_website_text)-1));
         } else if(strstr_P(input_line,PSTR("pan_left")) != NULL){
           Serial.println(F("pan_left"));
           shooter->turn_left();
+          esp->send_http_200_static(channel,(char *)blank_website_text,(sizeof(blank_website_text)-1));
         } else if(strstr_P(input_line,PSTR("fire")) != NULL){
           Serial.println(F("FIRRRRRRE!!!!"));
           shooter->fire();
+          esp->send_http_200_static(channel,(char *)blank_website_text,(sizeof(blank_website_text)-1));
         } else if(strstr_P(input_line,PSTR("settings"))){
           Serial.println(F("Settings Request Received!"));
-          process_settings(channel,input_line);
+          esp->process_settings(channel,input_line);
         }else {
           Serial.println(F("OTHER"));
         }
-        //todo: only refresh a status section on form button submit: 
-        Serial.println(F("| Sending blank HTTP200 response"));
-        esp->send_http_200_static(channel,(char *)blank_website_text,(sizeof(blank_website_text)-1));
-        Serial.println(F("| Sent blank HTTP200 response"));
         Serial.print(F("'| Free: "));Serial.println(mu_freeRam());
       }
     }

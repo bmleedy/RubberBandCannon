@@ -67,10 +67,6 @@ void Rubber_Band_Shooter::turn_left(){
  */
 Rubber_Band_Shooter::Rubber_Band_Shooter(){
 
-  // reserve space for my serial input buffer
-  serial_input_buffer.reserve(INPUT_BUFFER_MAX_SIZE);
-  serial_input_buffer = "";
-
   elevation_command_position = ELEVATION_CENTER_POSITION;
   elevation.attach(ELEVATION_PIN);  // attaches the servo on pin 9 to the servo object
   elevation.write(map(elevation_command_position,0,180,MIN_PULSE_WIDTH,MAX_PULSE_WIDTH));
@@ -93,10 +89,6 @@ Rubber_Band_Shooter::Rubber_Band_Shooter(){
  *        The pin on which the elevation servo is driven
  */
 Rubber_Band_Shooter::Rubber_Band_Shooter(unsigned char hammer_pin, unsigned char elevation_pin){
-
-  // reserve space for my serial input buffer
-  serial_input_buffer.reserve(INPUT_BUFFER_MAX_SIZE);
-  serial_input_buffer = "";
 
   elevation_command_position = ELEVATION_CENTER_POSITION;
   elevation.attach(elevation_pin);  // attaches the servo on pin 9 to the servo object

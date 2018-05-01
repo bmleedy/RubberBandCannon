@@ -12,10 +12,6 @@
 #include "Stepper.h"
 
 ////////////// Serial and Debug Definitions //////////////
-//#define SERIAL_BAUD_RATE 57600
-/*! @def INPUT_BUFFER_MAX_SIZE
- * HTTP Requests cannot exceed this size!*/
-#define INPUT_BUFFER_MAX_SIZE 500
 /*! @def MAX_BLOCKING_DELAY
  * Max delay in ms for the rubber band shooter internal logic*/
 #define MAX_BLOCKING_DELAY 5
