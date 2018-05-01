@@ -38,8 +38,10 @@
       function pftch(key,value){
         flds=document.getElementsByClassName(key);
         for(var i=0;i<flds.length;i++){
-          if(flds[i].tagName.toLowerCase()=="span")
+          if(flds[i].tagName.toLowerCase()=="span"){
             flds[i].textContent=value;
+            flds[i].style.color="Red";
+          }
           else
             flds[i].value=value;
         }
