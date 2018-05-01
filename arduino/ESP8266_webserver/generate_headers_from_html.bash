@@ -36,7 +36,7 @@ for file in ${HTML_FILES}; do
 
 
   # Write the lines to the header file
-  sed '/\/\/FETCHDATA_START/q' ${HTML_FILENAME} | grep -v "^//" | sed "s/^[ \t]*//" | sed 's/$/\\/' | sed 's/\"/\\\"/g' >> ${HEADER_FILENAME}
+  sed '/\/\/FETCHDATA_START/q' ${HTML_FILENAME} | grep -v "^//" | sed "s/^[ \t]*//" | sed 's/\\/\\\\/g' | sed 's/$/\\/' | sed 's/\"/\\\"/g' >> ${HEADER_FILENAME}
   echo "\";" >> ${HEADER_FILENAME}
 
   # Now, find the number of characters in that section and write that to a variable
@@ -75,7 +75,7 @@ for file in ${HTML_FILES}; do
   echo "  *  @brief generated variable  ${HEADER_NAME_BASE}_text_2" >> ${HEADER_FILENAME}
   echo "  */ " >> ${HEADER_FILENAME}
   echo "const char ${HEADER_NAME_BASE}_text_2[] PROGMEM = \"\\"  >> ${HEADER_FILENAME}
-  awk '/FETCHDATA_END/{flag=1;next}flag' ${HTML_FILENAME} | grep -v "^//" | sed 's/$/\\/' | sed 's/\"/\\\"/g' | sed "s/^[ \t]*//" >> ${HEADER_FILENAME}
+  awk '/FETCHDATA_END/{flag=1;next}flag' ${HTML_FILENAME} | grep -v "^//" | sed 's/\\/\\\\/g' | sed 's/$/\\/' | sed 's/\"/\\\"/g' | sed "s/^[ \t]*//" >> ${HEADER_FILENAME}
   echo "\";" >> ${HEADER_FILENAME}
   echo ""  >> ${HEADER_FILENAME}
   # Write out the number of characters in that string

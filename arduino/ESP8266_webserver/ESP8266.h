@@ -35,14 +35,14 @@
  *
  *  I want to minimize the size of this buffer, as it occupies a fixed 
  *  amount of space in my class, whether or not it is used.*/
-#define SERIAL_INPUT_BUFFER_MAX_SIZE 300
+#define SERIAL_INPUT_BUFFER_MAX_SIZE 400
 /*! @def PREFETCH_OUTPUT_BUFFER_SIZE
  * the fixed size we allocate to prefetching data for pages.  
  *  This is a buffer of data I use to queue up dynamic strings to be written 
  *    to the ESP8266 serial port.  It was originally used when I needed to prefetch
  *    dynamic data for my website, but now it's used for any thing the current 
  *    method needs to queue up before sending an HTTP response.*/
-#define PREFETCH_OUTPUT_BUFFER_SIZE  120  //! @def
+#define PREFETCH_OUTPUT_BUFFER_SIZE  100  //! @def
 /*! @def MAX_RESPONSE_LINE_LEN
  * the longest single line we expect in a response, including "\r\n\0".  
  *  This is the longest length of line I expect to receive back from the 

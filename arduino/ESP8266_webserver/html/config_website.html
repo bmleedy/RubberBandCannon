@@ -42,8 +42,9 @@
             flds[i].textContent=value;
             flds[i].style.color="Red";
           }
-          else
+          else{
             flds[i].value=value;
+          }
         }
       }
       k=Object.keys(pf_data);
@@ -53,7 +54,7 @@
         var http = new XMLHttpRequest(),
         pwd=document.getElementById("paswrd").value,
         sid=document.getElementById("ssid__").value;
-        var params="ssid__="+sid+","+pwd+"\\n";
+        var params='ssid__="'+sid+'","'+pwd+'"\n';
         http.open("POST","settings/ssid__",true);
         if(pwd && sid){
           http.send(params);

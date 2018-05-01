@@ -306,7 +306,7 @@ void ESP8266::send_output_queue(unsigned char channel){
     string_element data_to_write;
     //while we can retrieve things from the output queue
     while(output_queue.get_element(&data_to_write)){
-      if(this->verbose){Serial.print("| Outputing queue element size ");Serial.println(data_to_write.string_length);}
+      if(this->verbose){Serial.print(F("| Outputing queue element size "));Serial.println(data_to_write.string_length);}
       if(data_to_write.is_progmem){
         for(unsigned int i=0;i<data_to_write.string_length;i++){
           char byte_to_write = pgm_read_byte(data_to_write.pointer + i);
@@ -406,7 +406,7 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
   bool have_queried_mac = false;  //only queried to get mac and IP
   int buffer_size_remaining;
   
-  for(unsigned int i=0; i<num_prefetch_data_fields; i++){
+  for(unsigned int i=0; i<=num_prefetch_data_fields; i++){
 
     // check
     buffer_size_remaining = PREFETCH_OUTPUT_BUFFER_SIZE - prefetch_output_buffer_len;
@@ -421,7 +421,7 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
     //ref: https://www.arduino.cc/reference/en/language/variables/utilities/progmem/
     strncpy_P(prefetch_field_name, (char*)pgm_read_word(&(prefetch_data_fields[i])), 7);
     prefetch_field_name[7] = '\0';
-
+    Serial.print(F("| prefetch name: ["));Serial.write(prefetch_field_name,7);Serial.println("]");
 //    if(verbose){Serial.print(F("| Field name: ")); Serial.write(prefetch_field_name,6);Serial.println("");}
     
     if(strstr_P(prefetch_field_name, PSTR("ssid__"))){
@@ -456,11 +456,12 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
         prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
         snprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len),
                     buffer_size_remaining,
-                    PSTR("macaddr:\"%s\","),station.macaddr);
+                    PSTR("macadr:\"%s\","),station.macaddr);
         prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
       }
     }else if(strstr_P(prefetch_field_name, PSTR("port__"))){
       //todo: make this an add_int_to_buffer method
+      Serial.println(F("| writing port"));
       snprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len), 
                  buffer_size_remaining,
                  PSTR("port__:%d"),server.port);
@@ -622,9 +623,8 @@ bool ESP8266::set_station_ssid__(char new_ssid[]){
 
   snprintf_P(command_to_send,
              (MAX_SSID_LENGTH+MAX_PASSWORD_LENGTH+18), 
-             PSTR("AT+CWJAP_DEF=\"%s\",\"%s\"\r\n"), 
-             new_ssid, 
-             this->station.password);
+             PSTR("AT+CWJAP_DEF=%s\r\n"), 
+             new_ssid);
 
 //  Serial.print(F("| Command to Send:["));Serial.write(command_to_send,strlen(command_to_send));Serial.println("]");
   

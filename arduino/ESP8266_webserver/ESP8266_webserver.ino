@@ -207,7 +207,7 @@ void process_settings(unsigned char channel, char input_line[]) {
     Serial.println(F("| received an SSID setting request"));
     do{
       //todo: make the webpage submit both of these requests at once.
-      Serial.print(F("| request line: "));Serial.write(input_line,strlen(input_line));
+      //Serial.print(F("| request line: "));Serial.write(input_line,strlen(input_line));
       if(strstr_P(input_line,PSTR("ssid__=")) != NULL){
         //found the setting string
         read_pointer = strtok(input_line,"="); //up to the start of the SSID
@@ -267,13 +267,9 @@ void loop() {
       if(strstr_P(input_line,PSTR("/config"))){
         //config page has been requested
         Serial.print(F("|     config page requested"));
-        //esp->send_http_200_with_prefetch(channel,(char *)config_website_text_0,(sizeof(static_website_text_0)-1),
-        //                                (char *)config_website_text_2,(sizeof(static_website_text_2)-1),
-        //                                config_website_prefetch, (sizeof(config_website_prefetch) / sizeof(config_website_prefetch[0])));
-        esp->send_http_200_with_prefetch(channel,(char *)config_website_text_0,config_website_text_0_len,
+        esp->send_http_200_with_prefetch(channel,(char *)config_website_text_0,config_website_text_0_len-1,
                                         (char *)config_website_text_2,config_website_text_2_len,
-                                        config_website_prefetch, config_website_PREFETCH_LEN);
-
+                                        config_website_prefetch, config_website_PREFETCH_LEN-1);
       } else if (strstr_P(input_line,PSTR("/info/networks"))){
         esp->send_networks_list(channel);
       } else {
