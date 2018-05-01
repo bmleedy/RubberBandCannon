@@ -148,8 +148,7 @@ public:
     bool read_line(char line_buffer[], unsigned int line_buffer_size);
     bool read_line(char line_buffer[], unsigned int line_buffer_size, unsigned int timeout_ms);
     void clear_buffer();
-    bool set_station_ssid__(char new_ssid[]);
-    bool set_station_passwd(char new_password[]);
+    bool set_station_ssid_and_passwd(char new_ssid_and_passws[]);
     char get_channel_from_string(char line[], int len);
     void process_settings(unsigned char channel, char input_line[], int input_line_size);
     

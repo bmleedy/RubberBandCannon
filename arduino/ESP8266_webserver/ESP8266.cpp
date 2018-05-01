@@ -608,25 +608,28 @@ char ESP8266::read_port(){
  *     
  * @return TRUE if we successfully set the SSID we connect to.
  */
-bool ESP8266::set_station_ssid__(char new_ssid[]){
+bool ESP8266::set_station_ssid_and_passwd(char new_ssid_and_passwd[]){
 
   char command_to_send[(MAX_SSID_LENGTH+MAX_PASSWORD_LENGTH+18)];
   char desired_response[] = "OK";
   unsigned int max_attempts = 3;
 
-  Serial.print(F("| Setting new ssid: ["));Serial.write(new_ssid,strlen(new_ssid));Serial.println("]");
+  Serial.print(F("| Setting new ssid: ["));Serial.write(new_ssid_and_passwd,strlen(new_ssid_and_passwd));Serial.println("]");
 
   snprintf_P(command_to_send,
              (MAX_SSID_LENGTH+MAX_PASSWORD_LENGTH+18), 
              PSTR("AT+CWJAP_DEF=%s\r\n"), 
-             new_ssid);
+             new_ssid_and_passwd);
   
   for(unsigned int i=0; i<max_attempts; i++){
     if(expect_response_to_command(command_to_send, 
                                      strlen(command_to_send),
                                      desired_response,10000)){
-      //update my class variable
-      strncpy(this->station.ssid,new_ssid,MAX_SSID_LENGTH+1);
+      //update my class variables
+      char* read_pointer = strtok(new_ssid_and_passwd,",\"");
+      strncpy(this->station.ssid,read_pointer,MAX_PASSWORD_LENGTH+1);
+      read_pointer = strtok(NULL,",\"");
+      strncpy(this->station.password,read_pointer,MAX_SSID_LENGTH+1);
       //return success
       return true;
     }else{
@@ -638,41 +641,6 @@ bool ESP8266::set_station_ssid__(char new_ssid[]){
 }
 
 
-/*!
- * Sends the command to set the password to the ESP8266 and returns true if it succeeds.
- * 
- * @param new_password
- *        c-string array with the new password
- *        
- * @return TRUE if the station password was successfully set.
- */
-bool ESP8266::set_station_passwd(char new_password[]){
-  char command_to_send[(MAX_SSID_LENGTH+MAX_PASSWORD_LENGTH+18)];
-  char desired_response[] = "OK";
-  unsigned int max_attempts = 3;
-  
-  strtok(new_password,"\n");//remove the \n on the password string
-  Serial.print(F("| New password: "));Serial.write(new_password,strlen(new_password));Serial.println("");
-
-  snprintf_P(command_to_send,
-             (MAX_SSID_LENGTH+MAX_PASSWORD_LENGTH+18), 
-             PSTR("AT+CWJAP_DEF=%s,%s\r\n"), 
-             this->station.ssid, 
-             new_password);
-  for(unsigned int i=0; i<max_attempts; i++){
-    if(expect_response_to_command(command_to_send, 
-                                     strlen(command_to_send),
-                                     desired_response,5000)){
-      //update my class variable
-      strncpy(this->station.password,new_password,MAX_PASSWORD_LENGTH+1);
-      //return success
-      return true;
-    }else{
-      Serial.println(F("| Attempt to set password failed"));
-    }
-  }
-  return false; //we timed out and did not succeed.
-}
 
 
 /*!
@@ -787,7 +755,7 @@ void ESP8266::process_settings(unsigned char channel, char input_line[],int inpu
         read_pointer = strtok(input_line,"="); //up to the start of the SSID
         read_pointer = strtok(NULL,"="); //the SSID field
         read_pointer = strtok(read_pointer,"\n"); //trimming the trailing newline
-        if(set_station_ssid__(read_pointer)){
+        if(set_station_ssid_and_passwd(read_pointer)){
           //No point in sending a response - SSID change will break the connection.
           Serial.println(F("| Set Station SSID succeeded!"));
           break;
