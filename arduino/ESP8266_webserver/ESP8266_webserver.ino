@@ -53,6 +53,8 @@
  * Copyright Brett Leedy, 2018.  All rights reserved.
  */
 
+//! @todo set esp maxconns to 1
+//! @todo when level shifter hardware is available, increase baud to 115200bps
 //! @todo Use HTTP "Content Length:" header instead of terminating connections
 //! @todo Add a camera to the shooter/website (snap after each turn)
 //! @todo Create an ESP initializer program, to discover serial baud and set up settings 
