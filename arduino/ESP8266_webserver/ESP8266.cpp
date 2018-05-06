@@ -29,11 +29,7 @@ ESP8266::ESP8266(AltSoftSerial *port, bool verbose){
   this->port = port;  //serial port
   serial_input_buffer = new CircularBuffer(SERIAL_INPUT_BUFFER_MAX_SIZE);
   this->verbose = verbose;
-  if(this->verbose){
-    Serial.print(F("| Dumping all reads and writes to the serial port!"));
-  }
-  this->dump_reads = this->verbose;
-  this->dump_writes= this->verbose;
+  PRINTSTRLN_IF_VERBOSE("| Dumping all reads and writes to the serial port!");
   //todo: load the following values from eeprom instead of hard-coded defaults
   strcpy_P(station.ssid,PSTR("leedy"));         //default SSID
   strcpy_P(station.password,PSTR("teamgoat"));  //default password
@@ -115,6 +111,24 @@ void ESP8266::clear_buffer(){
 
 
 /*!
+ *  Read all bytes from the serial port, drop them on the floor, and flush the serial input buffer
+ *  
+ *  
+ *  @param timeout
+ *         number of milliseconds to run the purge
+ */
+void ESP8266::purge_serial_input(unsigned int timeout){
+  //todo: add max length to copy for buffer as an arg.
+  unsigned int start_time = millis();
+  while (this->port->available() || ((millis()-start_time) >= timeout)) {
+    //read the port and do nothing 
+    if(this->port->available())
+      read_port();
+  }
+  clear_buffer();
+}
+
+/*!
  *  Send a command and expect a string in response.
  *  
  *  Used for setting up the ESP8266
@@ -170,112 +184,194 @@ bool ESP8266::expect_response_to_command(const char * command, unsigned int comm
 bool ESP8266::setup_device(){
     char request_buffer[COMMAND_BUFFER_SIZE]; 
     char response_buffer[COMMAND_BUFFER_SIZE];
+    int setup_stage_delay=1000;
    
     // Get a response from anyone
-    Serial.print(F("ESP8266 - Waiting for a response from the Wifi Device..."));
+    Serial.print(F("| ESP8266 - Waiting for a response from the Wifi Device..."));
     while(!expect_response_to_command("AT\r\n",4,"OK",2000)){
         delay(1000);
     }
     Serial.println(F("[OK]"));
     
-    Serial.print(F("ESP8266 - Checking the device CWMODE..."));
+    Serial.print(F("| ESP8266 - Checking the device CWMODE..."));
     // Set myself up as a client of an access point.
     strncpy_P(request_buffer,PSTR("AT+CWMODE?\r\n"), COMMAND_BUFFER_SIZE);
-    strncpy_P(response_buffer,PSTR("+CWMODE:1"),COMMAND_BUFFER_SIZE);
-    if(expect_response_to_command(request_buffer,
-                                  strnlen(request_buffer,COMMAND_BUFFER_SIZE),
-                                  response_buffer,2000)){
-        Serial.println(F("[OK]"));
-    } else {
-        Serial.print (F("\nESP8266 -    Setting the mode to 'client mode'"));
-        strncpy_P(request_buffer,PSTR("AT+CWMODE=1\r\n"), COMMAND_BUFFER_SIZE);
+    strncpy_P(response_buffer,PSTR("+CWMODE:3"),COMMAND_BUFFER_SIZE);
+    while(true){
+      purge_serial_input(setup_stage_delay);
+      if(expect_response_to_command(request_buffer,
+                                    strnlen(request_buffer,COMMAND_BUFFER_SIZE),
+                                    response_buffer,2000)){
+          Serial.println(F("[OK]"));
+          break;
+      } else {
+        Serial.print (F("\n| ESP8266 -    Setting the mode to 'client mode'"));
+        strncpy_P(request_buffer,PSTR("AT+CWMODE_DEF=3\r\n"), COMMAND_BUFFER_SIZE);
         strncpy_P(response_buffer,PSTR("OK"), COMMAND_BUFFER_SIZE);
         if(expect_response_to_command(request_buffer,
                                       strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                       response_buffer,2000)){
             Serial.println(F("[OK]"));
+            break;
         }
         else {
             Serial.println(F("[FAIL]"));
-            return false;
         }
-    }
-    
-    // Now join the house access point
-    Serial.print(F("ESP8266 - Checking that we are on the correct network..."));
-    strncpy_P(request_buffer,PSTR("AT+CWJAP?\r\n"), COMMAND_BUFFER_SIZE);
-    snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("+CWJAP:\"%s\""),station.ssid);
-    if(expect_response_to_command(request_buffer,
-                                  strnlen(request_buffer,COMMAND_BUFFER_SIZE),
-                                  response_buffer,2000)){
-        Serial.println(F("[OK]"));
-    } else {
-        Serial.print (F("\nESP8266 -     Not on the correct network.  Changing the WiFi settings to join network..."));
-        snprintf_P(request_buffer, COMMAND_BUFFER_SIZE,PSTR("AT+CWJAP=\"%s\",\"%s\"\r\n"),station.ssid,station.password);
-        strncpy_P(response_buffer,PSTR("OK"),COMMAND_BUFFER_SIZE);
-        if(expect_response_to_command(request_buffer,
-                                      strnlen(request_buffer,COMMAND_BUFFER_SIZE),
-                                      response_buffer,
-                                      10000)){
-            Serial.println(F("[OK]"));
-        }
-        else {
-            Serial.println(F("[FAIL]"));
-            return false;
-        }
-    }
-    
-    // Set ourselves up to mux connections into our little server
-    Serial.print(F("ESP8266 - Checking the CIPMUX Settings..."));
-    strncpy_P(request_buffer,PSTR("AT+CIPMUX?\r\n"), COMMAND_BUFFER_SIZE);
-    strncpy_P(response_buffer,PSTR("+CIPMUX:1"),COMMAND_BUFFER_SIZE);
-    if(expect_response_to_command(request_buffer,
-                                  strnlen(request_buffer,COMMAND_BUFFER_SIZE),
-                                  response_buffer,2000)){
-        Serial.println(F("[OK]"));
-    } else {
-        Serial.print (F("\nESP8266 -    Server not enabled yet. Setting CIPMUX=1..."));
-        strncpy_P(request_buffer,PSTR("AT+CIPMUX=1\r\n"), COMMAND_BUFFER_SIZE);
-        strncpy_P(response_buffer,PSTR("OK"),COMMAND_BUFFER_SIZE);
-        if(expect_response_to_command(request_buffer,
-                                      strnlen(request_buffer,COMMAND_BUFFER_SIZE),
-                                      response_buffer,
-                                      10000)){
-            Serial.println(F("[OK]"));
-        }
-        else {
-            Serial.println(F("[FAIL]"));
-            return false;
-        }
+      }
     }
 
+    // configure the cannon AP
+    Serial.print(F("| ESP8266 - configuring my own access point..."));
+    strncpy_P(request_buffer,PSTR("AT+CWSAP_DEF?\r\n"), COMMAND_BUFFER_SIZE);
+    snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("+CWSAP_DEF:\"cannon_ap\",\"%s\",1,3"),"cannon_pass_!@#$");
+    while(true){
+      purge_serial_input(setup_stage_delay);
+      if(expect_response_to_command(request_buffer,
+                                    strnlen(request_buffer,COMMAND_BUFFER_SIZE),
+                                    response_buffer,2000)){
+          Serial.println(F("[OK]"));
+          break;
+      } else {
+        Serial.print (F("\n| ESP8266 -     Access point not set up.  Setting up now..."));
+        snprintf_P(request_buffer,COMMAND_BUFFER_SIZE,PSTR("AT+CWSAP_DEF=\"cannon_ap\",\"%s\",1,3,4,0\r\n"),"cannon_pass_!@#$");
+        //! todo: secure this default password
+        strncpy_P(response_buffer,PSTR("OK"),COMMAND_BUFFER_SIZE);
+        if(expect_response_to_command(request_buffer,
+                                      strnlen(request_buffer,COMMAND_BUFFER_SIZE),
+                                      response_buffer,
+                                      10000)){
+            Serial.println(F("[OK]"));
+            break;
+        }
+        else {
+            Serial.println(F("[FAIL]"));
+        }
+      }
+    }
+
+
+    
+    // configure the cannon AP
+    Serial.print(F("| ESP8266 - configuring my ip address on cannon_ap network to 192.168.4.1..."));
+    strncpy_P(request_buffer,PSTR("AT+CIPAP_DEF?\r\n"), COMMAND_BUFFER_SIZE);
+    snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("+CIPAP_DEF:ip:\"192.168.4.1\""),"192.168.4.1","192.168.4.1");
+    while(true){
+      purge_serial_input(setup_stage_delay);
+      if(expect_response_to_command(request_buffer,
+                                    strnlen(request_buffer,COMMAND_BUFFER_SIZE),
+                                    response_buffer,2000)){
+          Serial.println(F("[OK]"));
+          break;
+      } else {
+        Serial.print (F("\n| ESP8266 -  ip address on cannon_ap not set up.  Setting up now..."));
+        snprintf_P(request_buffer,COMMAND_BUFFER_SIZE,PSTR("AT+CIPAP_DEF=\"%s\",\"%s\",\"255.255.255.0\"\r\n"),"192.168.4.1","192.168.4.1");
+        //! todo: secure this default password
+        strncpy_P(response_buffer,PSTR("OK"),COMMAND_BUFFER_SIZE);
+        if(expect_response_to_command(request_buffer,
+                                      strnlen(request_buffer,COMMAND_BUFFER_SIZE),
+                                      response_buffer,
+                                      10000)){
+            Serial.println(F("[OK]"));
+            break;
+        }
+        else {
+            Serial.println(F("[FAIL]"));
+        }
+      }
+    }
+
+    
+    // Now join the house access point
+    Serial.print(F("| ESP8266 - Checking that we are on the correct network..."));
+    strncpy_P(request_buffer,PSTR("AT+CWJAP?\r\n"), COMMAND_BUFFER_SIZE);
+    snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("+CWJAP:\"%s\""),station.ssid);
+    while(true){
+      purge_serial_input(setup_stage_delay);
+      if(expect_response_to_command(request_buffer,
+                                    strnlen(request_buffer,COMMAND_BUFFER_SIZE),
+                                    response_buffer,2000)){
+          Serial.println(F("[OK]"));
+          break;
+      } else {
+        Serial.print (F("\n| ESP8266 -     Not on the correct network.  Changing the WiFi settings to join network..."));
+        snprintf_P(request_buffer, COMMAND_BUFFER_SIZE,PSTR("AT+CWJAP_DEF=\"%s\",\"%s\"\r\n"),station.ssid,station.password);
+        strncpy_P(response_buffer,PSTR("OK"),COMMAND_BUFFER_SIZE);
+        if(expect_response_to_command(request_buffer,
+                                      strnlen(request_buffer,COMMAND_BUFFER_SIZE),
+                                      response_buffer,
+                                      10000)){
+            Serial.println(F("[OK]"));
+            break;
+        }
+        else {
+            Serial.println(F("[FAIL]"));
+        }
+      }
+    }
+/*
     // Now setup the CIP Server
     Serial.print(F("ESP8266 - Setting server maxconns..."));
     snprintf_P(request_buffer, COMMAND_BUFFER_SIZE,PSTR("AT+CIPSERVERMAXCONN=%d\r\n"),server.maxconns);
     strncpy_P(response_buffer,PSTR("OK"),COMMAND_BUFFER_SIZE);
-    if(expect_response_to_command(request_buffer,
-                                  strnlen(request_buffer,COMMAND_BUFFER_SIZE),
-                                  response_buffer,
-                                  10000)){
+    while(true){
+      purge_serial_input(setup_stage_delay);
+      if(expect_response_to_command(request_buffer,
+                                    strnlen(request_buffer,COMMAND_BUFFER_SIZE),
+                                    response_buffer,
+                                    10000)){
         Serial.println(F("[OK]"));
-    } else {
+        break;
+      } else {
         Serial.println(F("[FAIL]"));
-        return false;
+      }
+    }
+  */  
+    // Set ourselves up to mux connections into our little server
+    Serial.print(F("| ESP8266 - Checking the CIPMUX Settings..."));
+    strncpy_P(request_buffer,PSTR("AT+CIPMUX?\r\n"), COMMAND_BUFFER_SIZE);
+    strncpy_P(response_buffer,PSTR("+CIPMUX:1"),COMMAND_BUFFER_SIZE);
+    while(true){
+      purge_serial_input(setup_stage_delay);
+      if(expect_response_to_command(request_buffer,
+                                    strnlen(request_buffer,COMMAND_BUFFER_SIZE),
+                                    response_buffer,2000)){
+          Serial.println(F("[OK]"));
+          break;
+      } else {
+          Serial.print(F("\n| ESP8266 -    Server not enabled yet. Setting CIPMUX=1..."));
+          strncpy_P(request_buffer,PSTR("AT+CIPMUX=1\r\n"), COMMAND_BUFFER_SIZE);
+          strncpy_P(response_buffer,PSTR("OK"),COMMAND_BUFFER_SIZE);
+          if(expect_response_to_command(request_buffer,
+                                        strnlen(request_buffer,COMMAND_BUFFER_SIZE),
+                                        response_buffer,
+                                        10000)){
+              Serial.println(F("[OK]"));
+              break;
+          }
+          else {
+              Serial.println(F("[FAIL]"));
+          }
+      }
     }
     
     // Now setup the CIP Server
-    Serial.print(F("ESP8266 - Configuring my server on port 8080..."));
+    Serial.print(F("| ESP8266 - Configuring my server on port 8080..."));
     snprintf_P(request_buffer, COMMAND_BUFFER_SIZE,PSTR("AT+CIPSERVER=1,%d\r\n"),server.port);
     strncpy_P(response_buffer,PSTR("OK"),COMMAND_BUFFER_SIZE);
-    if(expect_response_to_command(request_buffer,
-                                  strnlen(request_buffer,COMMAND_BUFFER_SIZE),
-                                  response_buffer,
-                                  10000)){
-        Serial.println(F("[OK]"));
-    } else {
-        Serial.println(F("[FAIL]"));
-        return false;
+    while(true){
+      purge_serial_input(setup_stage_delay);
+      if(expect_response_to_command(request_buffer,
+                                    strnlen(request_buffer,COMMAND_BUFFER_SIZE),
+                                    response_buffer,
+                                    10000)){
+          Serial.println(F("[OK]"));
+          break;
+      } else {
+          Serial.println(F("[FAIL]"));
+          return false;
+      }
     }
+    
   return true;
 }
 
@@ -306,7 +402,8 @@ void ESP8266::send_output_queue(unsigned char channel){
     string_element data_to_write;
     //while we can retrieve things from the output queue
     while(output_queue.get_element(&data_to_write)){
-      if(this->verbose){Serial.print(F("| Outputing queue element size "));Serial.println(data_to_write.string_length);}
+      PRINTSTR_IF_VERBOSE("| Outputting queue element of size: ");
+      PRINTLN_IF_VERBOSE(data_to_write.string_length);
       if(data_to_write.is_progmem){
         for(unsigned int i=0;i<data_to_write.string_length;i++){
           char byte_to_write = pgm_read_byte(data_to_write.pointer + i);
@@ -583,8 +680,7 @@ void ESP8266::query_ip_and_mac(){
 void ESP8266::write_port(char * write_string, unsigned int len){
   //write to port here
   this->port->write(write_string, len);
-  if(this->dump_writes)
-    Serial.write(write_string,len);
+  WRITE_IF_VERBOSE(write_string,len);
 }
 
 /*!
@@ -594,8 +690,7 @@ void ESP8266::write_port(char * write_string, unsigned int len){
  */
 char ESP8266::read_port(){
   char rv = this->port->read();
-  if(this->dump_reads)
-    Serial.write(rv);
+  WRITE_IF_VERBOSE(&rv,1);
   return rv;
 }
 
@@ -741,8 +836,6 @@ char ESP8266::get_channel_from_string(char line[], int len){
  *        This is the last line read from the ESP8266, which contains the path to
  *        the setting that we want to change.
  */
-//! @todo maybe pull this into the esp class
-//! @todo make these more DRY
 void ESP8266::process_settings(unsigned char channel, char input_line[],int input_line_size) {
   char* read_pointer = NULL;
 
@@ -765,7 +858,7 @@ void ESP8266::process_settings(unsigned char channel, char input_line[],int inpu
       }//if(ssid)
     }while(read_line(input_line,input_line_size, 10000));//while(read_line)
   } else {
-    Serial.println(F("| received an unknown setting path"));
+    Serial.println(F("| received an unknown setting path."));
   }
 }
 

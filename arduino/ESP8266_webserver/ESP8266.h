@@ -27,6 +27,23 @@
 #include "CircularBuffer.h"
 #include "OutputQueue.h"
 
+// Devug definition
+#define PRINT_SERIAL_STREAM false ///<If set, all data to and from the ESP8266 is dumped to the debug serial port.
+
+#if PRINT_SERIAL_STREAM
+#define PRINTSTR_IF_VERBOSE(x){Serial.print(F(x));}
+#define PRINT_IF_VERBOSE(x){Serial.print(x);}
+#define PRINTSTRLN_IF_VERBOSE(x){Serial.print(F(x));}
+#define PRINTLN_IF_VERBOSE(x){Serial.println(x);}
+#define WRITE_IF_VERBOSE(x,y){Serial.write(x,y);}
+#else
+#define PRINTSTR_IF_VERBOSE(x){}
+#define PRINT_IF_VERBOSE(x){}
+#define PRINTSTRLN_IF_VERBOSE(x){}
+#define PRINTLN_IF_VERBOSE(x){}
+#define WRITE_IF_VERBOSE(x,y){}
+#endif
+
 /*! @def SERIAL_INPUT_BUFFER_MAX_SIZE
  *  This is the size of the buffer I will use to read data from the ESP8266.
  *  Since I read one line at a time, this value needs to be larger than the 
@@ -58,7 +75,7 @@
 /*! @def COMMAND_BUFFER_SIZE
  *  size of buffer used for constructing commands to the ESP8266. Should be 
  *   The largest string length command you might send.*/
-#define COMMAND_BUFFER_SIZE 50
+#define COMMAND_BUFFER_SIZE 75
 /*! @def MAC_ADDRESS_LENGTH
  *  ASCII-encoded MAC address. Number of characters, not counting string null terminator.
  *  e.g. "DE:AD:BE:EF:AB:BA" */
@@ -123,7 +140,6 @@ struct server_info{
  */
 class ESP8266{
 private:
-    bool dump_reads,dump_writes;            ///<verbosity flags
     AltSoftSerial *port;                    ///<Initialized outside of this class
     CircularBuffer * serial_input_buffer;   ///<Pointer to the buffer we use for input
     bool verbose;                           ///<overall verbosity
@@ -148,7 +164,8 @@ public:
     bool read_line(char line_buffer[], unsigned int line_buffer_size);
     bool read_line(char line_buffer[], unsigned int line_buffer_size, unsigned int timeout_ms);
     void clear_buffer();
-    bool set_station_ssid_and_passwd(char new_ssid_and_passws[]);
+    void purge_serial_input(unsigned int timeout);
+    bool set_station_ssid_and_passwd(char new_ssid_and_passwd[]);
     char get_channel_from_string(char line[], int len);
     void process_settings(unsigned char channel, char input_line[], int input_line_size);
     

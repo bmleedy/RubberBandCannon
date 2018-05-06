@@ -89,10 +89,16 @@
 #include "Rubber_Band_Shooter.h"
 
 
-#define DEBUG_MEMORY true ///<flag to enable serial port prints indicating amount of free heap.
+#define DEBUG_MEMORY false ///<flag to enable serial port prints indicating amount of free heap.
 
-// Serial Port Definitions
-#define PRINT_SERIAL_STREAM false ///<If set, all data to and from the ESP8266 is dumped to the debug serial port.
+
+#if DEBUG_MEMORY
+#define PRINT_FREE_MEMORY() {Serial.print(F("'| Free: "));Serial.println(mu_freeRam());}
+#else
+#define PRINT_FREE_MEMORY() {}
+#endif
+
+
 /*! @def SERIAL_BAUD_RATE
  * Serial baud rate to talk to the ESP8266 and to the debug serial port.
  * Altsoftserial in my configration (non-ideal level shifting) is flaky at
@@ -177,17 +183,17 @@ void loop() {
       Serial.print(F("|  GET received on channel ")); Serial.println(channel,DEC);
       if(strstr_P(input_line,PSTR("/config"))){
         //config page has been requested
-        Serial.print(F("|     config page requested"));
+        Serial.println(F("|     config page requested"));
         esp->send_http_200_with_prefetch(channel,(char *)config_website_text_0,config_website_text_0_len-1,
                                         (char *)config_website_text_2,config_website_text_2_len,
                                         config_website_prefetch, config_website_PREFETCH_LEN-1);
       } else if (strstr_P(input_line,PSTR("/info/networks"))){
         esp->send_networks_list(channel);
       } else {
-        Serial.print(F("|     targeting page requested"));
+        Serial.println(F("|     targeting page requested"));
         esp->send_http_200_static(channel,(char *)static_website_text_0,(sizeof(static_website_text_0)-1));      
       }
-      Serial.print(F("'| Free: "));Serial.println(mu_freeRam());
+      PRINT_FREE_MEMORY();
     }else {
       if(strstr_P(input_line,PSTR("POST")) != NULL){
         Serial.print(F("|  POST received on channel ")); Serial.println(channel,DEC);
@@ -217,7 +223,7 @@ void loop() {
         }else {
           Serial.println(F("OTHER"));
         }
-        Serial.print(F("'| Free: "));Serial.println(mu_freeRam());
+        PRINT_FREE_MEMORY();
       }
     }
   }
