@@ -16,6 +16,14 @@
  */
 #include "ESP8266.h"
 
+void print_ok(){
+  Serial.println(F("[OK]"));
+}
+
+void print_fail(){
+  Serial.println(F("[FAIL]"));
+}
+
 /*!
  * @brief Constructor: SoftwareSerial port must already be initialized 
  * 
@@ -23,24 +31,51 @@
  * 
  * @param verbose  If this is set to true, we will spew data received over the serial port.
  * 
+ * @param eeprom_address  This is the start location to read configuration info from the eeprom.
+ *                        The EEPROM memory block we use looks
+ *                        [char initialized][network_info network_info]
+ *                         ^eeprom_address   ^eeprom_address + 1
+ *                        if "initialized" is set  not exactly equal to 'y', 
+ *                           then we load the default settings and write them to
+ *                           the EEPROM.
+ * 
  * @return         This is a constructor.
  */
-ESP8266::ESP8266(AltSoftSerial *port, bool verbose){
+ESP8266::ESP8266(AltSoftSerial *port, bool verbose, int eeprom_address){
   this->port = port;  //serial port
   serial_input_buffer = new CircularBuffer(SERIAL_INPUT_BUFFER_MAX_SIZE);
   this->verbose = verbose;
   PRINTSTRLN_IF_VERBOSE("| Dumping all reads and writes to the serial port!");
-  //todo: load the following values from eeprom instead of hard-coded defaults
-  strcpy_P(station.ssid,PSTR("leedy"));         //default SSID
-  strcpy_P(station.password,PSTR("teamgoat"));  //default password
-  strcpy_P(station.macaddr, PSTR("dc:4f:22:11:e9:64"));
-  strcpy_P(station.ip, PSTR("192.168.1.25"));
+
+  this->eeprom_address=eeprom_address;
+
+  if(EEPROM.read(eeprom_address) != 'y'){
+    Serial.println(F("| ESP8266: Network settings not initialized - loading defaults"));
+    // Set my own values to the defaults
+    strcpy_P(station.ssid,PSTR("leedy"));         //default SSID
+    strcpy_P(station.password,PSTR("teamgoat"));  //default password
+    strcpy_P(station.macaddr, PSTR("dc:4f:22:11:e9:64"));
+    strcpy_P(station.ip, PSTR("192.168.1.25"));
+    // Save these settings to EEPROM
+    update_eeprom();
+
+  } else{
+    //Read my settings from EEPROM, starting after the 'y'
+    PRINTSTRLN_IF_VERBOSE("| Reading Settings from EEPROM.");
+    EEPROM.get( (this->eeprom_address+1),this->station);
+  }
   this->server.port = DEFAULT_PORT;
   this->server.maxconns = DEFAULT_MAXCONNS;
 
   this->setup_device();
 }
 
+
+void ESP8266::update_eeprom(){
+  PRINTSTRLN_IF_VERBOSE("| ESP8266: Updating EEPROM");
+  EEPROM.put(this->eeprom_address, 'y');
+  EEPROM.put((this->eeprom_address+1), station);
+}
 
 /*!
  *  Read all data avalable on the serial port.  If I encounter
@@ -55,7 +90,6 @@ ESP8266::ESP8266(AltSoftSerial *port, bool verbose){
  *  @return TRUE if a line was read successfully
  */
 bool ESP8266::read_line(char line_buffer[], unsigned int line_buffer_size){
-  //todo: add max length to copy for buffer as an arg.
   char latest_byte = '\0';
   while (this->port->available()) {
     latest_byte = read_port();
@@ -93,11 +127,10 @@ bool ESP8266::read_line(char line_buffer[], unsigned int line_buffer_size, unsig
       return true;
     }
     else{
-      delay(2);  //chill for 2 ms
+      delay(1);  //chill for 1 ms
     }
-    Serial.print(".");
   }
-  Serial.println(F("| read_line timed out"));
+  Serial.println(F("| read_line timeout"));
   return false;
 }
 
@@ -118,7 +151,6 @@ void ESP8266::clear_buffer(){
  *         number of milliseconds to run the purge
  */
 void ESP8266::purge_serial_input(unsigned int timeout){
-  //todo: add max length to copy for buffer as an arg.
   unsigned int start_time = millis();
   while (this->port->available() || ((millis()-start_time) >= timeout)) {
     //read the port and do nothing 
@@ -167,9 +199,8 @@ bool ESP8266::expect_response_to_command(const char * command, unsigned int comm
         // continue reading more lines
       }
     }//if(read_line)
-    delay(1);
   }//while(millis...)
-  Serial.println(F("| expect_response_to_command: Response timed out"));
+  Serial.println(F("| expect_response: Timeout"));
   return false;
 }
 
@@ -191,7 +222,7 @@ bool ESP8266::setup_device(){
     while(!expect_response_to_command("AT\r\n",4,"OK",2000)){
         delay(1000);
     }
-    Serial.println(F("[OK]"));
+    print_ok();
     
     Serial.print(F("| ESP8266 - Checking the device CWMODE..."));
     // Set myself up as a client of an access point.
@@ -202,7 +233,7 @@ bool ESP8266::setup_device(){
       if(expect_response_to_command(request_buffer,
                                     strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                     response_buffer,2000)){
-          Serial.println(F("[OK]"));
+          print_ok();
           break;
       } else {
         Serial.print (F("\n| ESP8266 -    Setting the mode to 'client mode'"));
@@ -211,11 +242,11 @@ bool ESP8266::setup_device(){
         if(expect_response_to_command(request_buffer,
                                       strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                       response_buffer,2000)){
-            Serial.println(F("[OK]"));
+            print_ok();
             break;
         }
         else {
-            Serial.println(F("[FAIL]"));
+            print_fail();
         }
       }
     }
@@ -229,22 +260,21 @@ bool ESP8266::setup_device(){
       if(expect_response_to_command(request_buffer,
                                     strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                     response_buffer,2000)){
-          Serial.println(F("[OK]"));
+          print_ok();
           break;
       } else {
         Serial.print (F("\n| ESP8266 -     Access point not set up.  Setting up now..."));
         snprintf_P(request_buffer,COMMAND_BUFFER_SIZE,PSTR("AT+CWSAP_DEF=\"cannon_ap\",\"%s\",1,3,4,0\r\n"),"cannon_pass_!@#$");
-        //! todo: secure this default password
         strncpy_P(response_buffer,PSTR("OK"),COMMAND_BUFFER_SIZE);
         if(expect_response_to_command(request_buffer,
                                       strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                       response_buffer,
                                       10000)){
-            Serial.println(F("[OK]"));
+            print_ok();
             break;
         }
         else {
-            Serial.println(F("[FAIL]"));
+            print_fail();
         }
       }
     }
@@ -260,22 +290,21 @@ bool ESP8266::setup_device(){
       if(expect_response_to_command(request_buffer,
                                     strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                     response_buffer,2000)){
-          Serial.println(F("[OK]"));
+          print_ok();
           break;
       } else {
         Serial.print (F("\n| ESP8266 -  ip address on cannon_ap not set up.  Setting up now..."));
         snprintf_P(request_buffer,COMMAND_BUFFER_SIZE,PSTR("AT+CIPAP_DEF=\"%s\",\"%s\",\"255.255.255.0\"\r\n"),"192.168.4.1","192.168.4.1");
-        //! todo: secure this default password
         strncpy_P(response_buffer,PSTR("OK"),COMMAND_BUFFER_SIZE);
         if(expect_response_to_command(request_buffer,
                                       strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                       response_buffer,
                                       10000)){
-            Serial.println(F("[OK]"));
+            print_ok();
             break;
         }
         else {
-            Serial.println(F("[FAIL]"));
+            print_fail();
         }
       }
     }
@@ -290,21 +319,21 @@ bool ESP8266::setup_device(){
       if(expect_response_to_command(request_buffer,
                                     strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                     response_buffer,2000)){
-          Serial.println(F("[OK]"));
+          print_ok();
           break;
       } else {
-        Serial.print (F("\n| ESP8266 -     Not on the correct network.  Changing the WiFi settings to join network..."));
+        Serial.print (F("\n| ESP8266 -     Not on the correct network. Fixing the WiFi settings..."));
         snprintf_P(request_buffer, COMMAND_BUFFER_SIZE,PSTR("AT+CWJAP_DEF=\"%s\",\"%s\"\r\n"),station.ssid,station.password);
         strncpy_P(response_buffer,PSTR("OK"),COMMAND_BUFFER_SIZE);
         if(expect_response_to_command(request_buffer,
                                       strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                       response_buffer,
                                       10000)){
-            Serial.println(F("[OK]"));
+            print_ok();
             break;
         }
         else {
-            Serial.println(F("[FAIL]"));
+            print_fail();
         }
       }
     }
@@ -319,10 +348,10 @@ bool ESP8266::setup_device(){
                                     strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                     response_buffer,
                                     10000)){
-        Serial.println(F("[OK]"));
+        print_ok();
         break;
       } else {
-        Serial.println(F("[FAIL]"));
+        print_fail();
       }
     }
   */  
@@ -335,7 +364,7 @@ bool ESP8266::setup_device(){
       if(expect_response_to_command(request_buffer,
                                     strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                     response_buffer,2000)){
-          Serial.println(F("[OK]"));
+          print_ok();
           break;
       } else {
           Serial.print(F("\n| ESP8266 -    Server not enabled yet. Setting CIPMUX=1..."));
@@ -345,11 +374,11 @@ bool ESP8266::setup_device(){
                                         strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                         response_buffer,
                                         10000)){
-              Serial.println(F("[OK]"));
+              print_ok();
               break;
           }
           else {
-              Serial.println(F("[FAIL]"));
+              print_fail();
           }
       }
     }
@@ -364,10 +393,10 @@ bool ESP8266::setup_device(){
                                     strnlen(request_buffer,COMMAND_BUFFER_SIZE),
                                     response_buffer,
                                     10000)){
-          Serial.println(F("[OK]"));
+          print_ok();
           break;
       } else {
-          Serial.println(F("[FAIL]"));
+          print_fail();
           return false;
       }
     }
@@ -489,8 +518,6 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
   // start-line per https://tools.ietf.org/html/rfc2616#page-31 
   this->output_queue.add_element((char *)http_200_start_line, HTTP_200_START_LINE_LEN, true);
 
-  //! @todo add content-length header
-
   // Now enqueue the first section of website page data (in progmem)
   this->output_queue.add_element(page_data_0, page_data_0_len,true);
 
@@ -543,7 +570,6 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
       if(!have_queried_mac){
         //this->query_ip_and_mac();//todo: re-enable
         have_queried_mac = true; //only do one query to refresh IP and mac
-        //todo: make this an add_string_to_buffer method
         snprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len), 
                     buffer_size_remaining,
                     PSTR("ipaddr:\"%s\","),station.ip);
@@ -554,7 +580,6 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
         prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
       }
     }else if(strstr_P(prefetch_field_name, PSTR("port__"))){
-      //todo: make this an add_int_to_buffer method
       Serial.println(F("| writing port"));
       snprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len), 
                  buffer_size_remaining,
@@ -725,6 +750,10 @@ bool ESP8266::set_station_ssid_and_passwd(char new_ssid_and_passwd[]){
       strncpy(this->station.ssid,read_pointer,MAX_PASSWORD_LENGTH+1);
       read_pointer = strtok(NULL,",\"");
       strncpy(this->station.password,read_pointer,MAX_SSID_LENGTH+1);
+
+      //Store the new settings in eeprom
+      update_eeprom();
+      
       //return success
       return true;
     }else{

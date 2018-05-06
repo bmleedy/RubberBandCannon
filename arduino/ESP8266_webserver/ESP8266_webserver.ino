@@ -53,34 +53,14 @@
  * Copyright Brett Leedy, 2018.  All rights reserved.
  */
 
-
-//! @todo Scrub all code for todo's
-//! @todo Flesh out webserver stack - make more reliable
-//! @todo Store the website in EEPROM
-//! @todo Use a CDN (like CloudFront) for icons, graphics and other eye candy (maybe S3?)
 //! @todo Use HTTP "Content Length:" header instead of terminating connections
-//! @todo Remove all delay() calls in code
-//! @todo Enable watchdog timer
-//! @todo Use AJAX for command buttons - don't reload the website for each button press
-//! @todo Add super-basic MVC to the webserver
 //! @todo Add a camera to the shooter/website (snap after each turn)
-//! @todo Create an ESP initializer program, since 
-//! @todo Assemble more better-integrated ESP boards
-//! @todo Build a protoboard with everything on it
-//! @todo Connectorize harness to board (0.1in block connector)
-//! @todo Consolidate all constants, etc to a header file
-//! @todo Get a better name for the webserver
+//! @todo Create an ESP initializer program, to discover serial baud and set up settings 
 //! @todo Code lint 
 //! @todo Implement TLS
-//! @todo Figure out what other goodness the ESP8266 gives us
-//! @todo Make the ESP8266 an access point
-//! @todo Use access point functionality for device setup
-//! @todo Support multiple connections (instead of just connection 0)
-//! @todo Make a you tube video and link in readme
 //! @todo Make a custom icon for the project.
 //! @todo Try to do auto-targeting with camera image        
 //! @todo Add fuzz testing of inputs
-//! @todo fix the case on prefetch length #defines
 //! @todo fix the problem with declaring prefetch length as ints
 
 #include <AltSoftSerial.h>
@@ -147,7 +127,7 @@ void setup() {
 
   // Setup the connection to the ESP8266
   Serial.println(F("| Initializing ESP8266..."));
-  esp = new ESP8266(&softPort, PRINT_SERIAL_STREAM);
+  esp = new ESP8266(&softPort, PRINT_SERIAL_STREAM, 0);
   Serial.print(F("|   Done. Free Memory: "));Serial.println(mu_freeRam());
 
   shooter = new Rubber_Band_Shooter(SHOOTER_HAMMER_PIN, SHOOTER_ELEVATION_PIN);
@@ -158,9 +138,6 @@ void setup() {
     Serial.println(F("\n\nREADY TO RECEIVE COMMANDS, BUT NOT ECHOING WIFI DATA------"));
 
 }
-
-
-
 
 
 /*!

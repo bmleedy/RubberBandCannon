@@ -26,6 +26,7 @@
 #include "webserver_constants.h"
 #include "CircularBuffer.h"
 #include "OutputQueue.h"
+#include <EEPROM.h>
 
 // Devug definition
 #define PRINT_SERIAL_STREAM false ///<If set, all data to and from the ESP8266 is dumped to the debug serial port.
@@ -152,9 +153,10 @@ private:
     void query_ip_and_mac();
     bool is_network_connected();
     char current_channel;
+    int eeprom_address;
 
 public:
-    ESP8266(AltSoftSerial *port, bool verbose);
+    ESP8266(AltSoftSerial *port, bool verbose, int eeprom_address);
     void send_http_200_static(unsigned char channel,char page_data[],unsigned int page_data_len);
     void send_http_200_with_prefetch(unsigned char channel,char page_data_0[], unsigned int page_data_0_len,
                                                            char page_data_2[], unsigned int page_data_2_len,
@@ -177,6 +179,7 @@ private:
     void send_output_queue(unsigned char channel);
     char read_port();
     void write_port(char * write_string, unsigned int len);
+    void update_eeprom();
 };
 
 

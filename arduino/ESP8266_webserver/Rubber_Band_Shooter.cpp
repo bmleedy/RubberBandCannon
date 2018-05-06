@@ -11,7 +11,7 @@
  */
 void Rubber_Band_Shooter::fire() {
   hammer.write(map(FIRE_HAMMER_POSITION,0,180,MIN_PULSE_WIDTH,MAX_PULSE_WIDTH));  //fiiiirrrre!
-  delay(1000);  //wait a second for the servo to get there //todo: get rid of blocking delay
+  delay(1000);  //wait a second for the servo to get there
   hammer.write(map(ARMED_HAMMER_POSITION,0,180,MIN_PULSE_WIDTH,MAX_PULSE_WIDTH));  //ready to load again
 }
 
@@ -48,7 +48,7 @@ void Rubber_Band_Shooter::turn_right(){
   int step_distance = BASE_STEP_INCREMENT * BASE_STEPS_PER_DEGREE;
   small_stepper->setSpeed(BASE_MAX_SPEED);
   small_stepper->step(step_distance);// Rotate CW
-  delay(MAX_BLOCKING_DELAY); //todo: make this non-blocking
+  delay(MAX_BLOCKING_DELAY);
 }
 
 /*!
@@ -58,7 +58,7 @@ void Rubber_Band_Shooter::turn_left(){
   int step_distance = -1 * BASE_STEP_INCREMENT * BASE_STEPS_PER_DEGREE;
   small_stepper->setSpeed(BASE_MAX_SPEED); //Max is 500
   small_stepper->step(step_distance);// Rotate CCW
-  delay(MAX_BLOCKING_DELAY); //todo: make this non-blocking
+  delay(MAX_BLOCKING_DELAY);
 }
 
 
