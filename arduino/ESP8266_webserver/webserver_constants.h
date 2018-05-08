@@ -14,10 +14,6 @@
  * 
  * @brief HTTP 200 response start line and trailing newlines.
  * 
- * https://tools.ietf.org/html/rfc2616#page-31
- * http://www.nongnu.org/avr-libc/user-manual/group__avr__pgmspace.html
- * https://www.w3schools.com/jquery/jquery_ajax_intro.asp
- * https://www.w3schools.com/jquery/jquery_examples.asp
  */
 //! @todo: add content length header
 const char http_200_start_line[] PROGMEM = "HTTP/1.1 200 OK\r\n\r\n";

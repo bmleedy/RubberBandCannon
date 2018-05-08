@@ -476,7 +476,6 @@ void ESP8266::send_output_queue(unsigned char channel){
  */
 void ESP8266::send_http_200_static(unsigned char channel, char page_data[], unsigned int page_data_len){
 
-  // Add start-line per https://tools.ietf.org/html/rfc2616#page-31 
   this->output_queue.add_element((char *)http_200_start_line, HTTP_200_START_LINE_LEN, true);
 
   //todo: add Content_Length header so I don't have to close the connection forcibly
@@ -515,7 +514,7 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
                                           char page_data_2[], unsigned int page_data_2_len,
                                           const char* const prefetch_data_fields[], unsigned int num_prefetch_data_fields){
 
-  // start-line per https://tools.ietf.org/html/rfc2616#page-31 
+
   this->output_queue.add_element((char *)http_200_start_line, HTTP_200_START_LINE_LEN, true);
 
   // Now enqueue the first section of website page data (in progmem)
@@ -542,7 +541,6 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
 
     char prefetch_field_name[10];
 
-    //ref: https://www.arduino.cc/reference/en/language/variables/utilities/progmem/
     strncpy_P(prefetch_field_name, (char*)pgm_read_word(&(prefetch_data_fields[i])), 7);
     prefetch_field_name[7] = '\0';
 

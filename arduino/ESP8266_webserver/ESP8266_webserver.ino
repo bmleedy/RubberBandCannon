@@ -9,37 +9,8 @@
  * 
  * This program uses the ESP8266 class to serve up a website. The
  * objective is to ontrol the rubber band launching
- * device from my phone, tablet, the internet, or whatever.
- * 
- * RESEARCH LINKS: 
- *     https://github.com/sleemanj/ESP8266_Simple/blob/master/README.md <br>
- *     https://nurdspace.nl/ESP8266 <br>
- *     http://www.electrodragon.com/w/images/f/ff/4a-esp8266_at_instruction_set_en_%281%29.pdf <br>
- *     https://github.com/sleemanj/ESP8266_Simple/blob/master/arduino-wiring-diagram.jpg <br>
- *     https://smile.amazon.com/gp/product/B01EA3UJJ4/ref=oh_aui_detailpage_o02_s00?ie=UTF8&psc=1 <br>
- *     https://hackingmajenkoblog.wordpress.com/2016/02/04/the-evils-of-arduino-strings/ <br>
- *     https://www.youtube.com/watch?v=ETLDW22zoMA&t=9s <br>
- * 
- * ESP8266 SETUP:
- *     Default baud rate on the chips: 115200bps
- *     To enable the chips: set all middle pins to +3.3v
- *     Default baud rate is 115200 (software serial port is flaky at this rate)
- *     Use AT+UART_DEF=19200,8,1,0,0 to switch to 19200
- * 
- * SOFTWARESERIAL SETUP:
- * The pin used for RX must support change interrupts: 
- *                https://playground.arduino.cc/Code/Interrupts 
- *                
- *                
- * REFERENCE LINKS: 
- *        https://os.mbed.com/users/wim/notebook/sc16is750-i2c-or-spi-to-uart-bridge/
- *        https://www.nxp.com/docs/en/brochure/75015676.pdf
- *        https://www.maximintegrated.com/en/products/interface/controllers-expanders/MAX3107.html
- *        https://forum.arduino.cc/index.php?topic=419359.0
- *        http://arduino-esp8266.readthedocs.io/en/latest/PROGMEM.html
- *        
- *        
- *          
+ * device from my phone, tablet, the internet, or whatever.    
+ *
  * @section dependencies Dependencies
  *  This library depends on AltSoftSerial, ServoTimer2, and Stepper Arduino drivers being present on your system. Please make sure you have
  * installed the latest version before using this library.
