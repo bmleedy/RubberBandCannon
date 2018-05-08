@@ -11,6 +11,7 @@
     <title>Brett's Rubber Band Cannon</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script language="javascript">
+    $.ajaxSetup({type: 'POST',timeout: 50})
     function doFunction(myarg) {
       geturl = window.location;
       var baseUrl = geturl.protocol + "//" + geturl.host + "/" + myarg;
