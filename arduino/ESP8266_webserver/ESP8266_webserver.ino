@@ -36,6 +36,29 @@
 //! @todo Add fuzz testing of inputs
 //! @todo fix the problem with declaring prefetch length as ints
 
+
+char *strnstr_P(char *haystack, PGM_P needle, size_t haystack_length)
+{
+    size_t needle_length = strlen_P(needle);
+    size_t i;
+
+    for (i = 0; i < haystack_length; i++)
+    {
+        if (i + needle_length > haystack_length)
+        {
+            return NULL;
+        }
+
+        if (strncmp_P(&haystack[i], needle, needle_length) == 0)
+        {
+            return &haystack[i];
+        }
+    }
+    return NULL;
+}
+
+
+
 #include <AltSoftSerial.h>
 #include <MemoryUsage.h>
 #include "ESP8266.h"
@@ -69,7 +92,7 @@ ESP8266 * esp; ///<This is the class used to interface the ESP.
 /*! var input_line
  * This is used to hold the most recent line read from the ESP.
  */
-//! @todo This is a bigtime memory waster - figure out how to eliminate this
+//! @todo This is a bigtime memory waster - implement everything I'm doing here in the ESP8266 class to existing buffers
 #define MAXIMUM_INPUT_LINE_LENGTH 200
 char input_line[MAXIMUM_INPUT_LINE_LENGTH+1];
 
@@ -129,15 +152,15 @@ void loop() {
     //First, parse out the connection channel, zero of none is found
     channel = esp->get_channel_from_string(input_line,50);
 
-    if(strstr_P(input_line,PSTR("GET")) != NULL){
+    if(strnstr_P(input_line,PSTR("GET"),MAXIMUM_INPUT_LINE_LENGTH) != NULL){
       Serial.print(F("|  GET received on channel ")); Serial.println(channel,DEC);
-      if(strstr_P(input_line,PSTR("/config"))){
+      if(strnstr_P(input_line,PSTR("/config"),MAXIMUM_INPUT_LINE_LENGTH)){
         //config page has been requested
         Serial.println(F("|     config page requested"));
         esp->send_http_200_with_prefetch(channel,(char *)config_website_text_0,config_website_text_0_len-1,
                                         (char *)config_website_text_2,config_website_text_2_len,
                                         config_website_prefetch, config_website_PREFETCH_LEN-1);
-      } else if (strstr_P(input_line,PSTR("/info/networks"))){
+      } else if (strnstr_P(input_line,PSTR("/info/networks"),MAXIMUM_INPUT_LINE_LENGTH)){
         esp->send_networks_list(channel);
       } else {
         Serial.println(F("|     targeting page requested"));
@@ -145,29 +168,29 @@ void loop() {
       }
       PRINT_FREE_MEMORY();
     }else {
-      if(strstr_P(input_line,PSTR("POST")) != NULL){
+      if(strnstr_P(input_line,PSTR("POST"),MAXIMUM_INPUT_LINE_LENGTH) != NULL){
         Serial.print(F("|  POST received on channel ")); Serial.println(channel,DEC);
-        if(strstr_P(input_line,PSTR("tilt_up")) != NULL){
+        if(strnstr_P(input_line,PSTR("tilt_up"),MAXIMUM_INPUT_LINE_LENGTH) != NULL){
           Serial.println(F("tilt_up"));
           shooter->turn_up();
           esp->send_http_200_static(channel,(char *)blank_website_text,(sizeof(blank_website_text)-1));
-        } else if(strstr_P(input_line,PSTR("tilt_down")) != NULL){
+        } else if(strnstr_P(input_line,PSTR("tilt_down"),MAXIMUM_INPUT_LINE_LENGTH) != NULL){
           Serial.println(F("tilt_down"));
           shooter->turn_down();
           esp->send_http_200_static(channel,(char *)blank_website_text,(sizeof(blank_website_text)-1));
-        } else if(strstr_P(input_line,PSTR("pan_right")) != NULL){
+        } else if(strnstr_P(input_line,PSTR("pan_right"),MAXIMUM_INPUT_LINE_LENGTH) != NULL){
           Serial.println(F("pan_right"));
           shooter->turn_right();
           esp->send_http_200_static(channel,(char *)blank_website_text,(sizeof(blank_website_text)-1));
-        } else if(strstr_P(input_line,PSTR("pan_left")) != NULL){
+        } else if(strnstr_P(input_line,PSTR("pan_left"),MAXIMUM_INPUT_LINE_LENGTH) != NULL){
           Serial.println(F("pan_left"));
           shooter->turn_left();
           esp->send_http_200_static(channel,(char *)blank_website_text,(sizeof(blank_website_text)-1));
-        } else if(strstr_P(input_line,PSTR("fire")) != NULL){
+        } else if(strnstr_P(input_line,PSTR("fire"),MAXIMUM_INPUT_LINE_LENGTH) != NULL){
           Serial.println(F("FIRRRRRRE!!!!"));
           shooter->fire();
           esp->send_http_200_static(channel,(char *)blank_website_text,(sizeof(blank_website_text)-1));
-        } else if(strstr_P(input_line,PSTR("settings"))){
+        } else if(strnstr_P(input_line,PSTR("settings"),MAXIMUM_INPUT_LINE_LENGTH)){
           Serial.println(F("Settings Request Received!"));
           esp->process_settings(channel,input_line,MAXIMUM_INPUT_LINE_LENGTH);
         }else {
