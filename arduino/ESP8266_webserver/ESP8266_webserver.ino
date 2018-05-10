@@ -37,27 +37,6 @@
 //! @todo fix the problem with declaring prefetch length as ints
 
 
-char *strnstr_P(char *haystack, PGM_P needle, size_t haystack_length)
-{
-    size_t needle_length = strlen_P(needle);
-    size_t i;
-
-    for (i = 0; i < haystack_length; i++)
-    {
-        if (i + needle_length > haystack_length)
-        {
-            return NULL;
-        }
-
-        if (strncmp_P(&haystack[i], needle, needle_length) == 0)
-        {
-            return &haystack[i];
-        }
-    }
-    return NULL;
-}
-
-
 
 #include <AltSoftSerial.h>
 #include <MemoryUsage.h>

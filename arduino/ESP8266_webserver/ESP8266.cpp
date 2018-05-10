@@ -24,6 +24,23 @@ void print_fail(){
   Serial.println(F("[FAIL]"));
 }
 
+//Do not search beyond the end of your haystack
+char *strnstr_P(char *haystack, PGM_P needle, size_t haystack_length)
+{
+  size_t needle_length = strlen_P(needle);
+  size_t i;
+  for (i = 0; i < haystack_length; i++)
+  {
+    if (i + needle_length > haystack_length){
+      return NULL;
+    }
+    if (strncmp_P(&haystack[i], needle, needle_length) == 0){
+      return &haystack[i];
+    }
+  }
+  return NULL;
+}
+
 /*!
  * @brief Constructor: SoftwareSerial port must already be initialized 
  * 
@@ -544,7 +561,7 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
     strncpy_P(prefetch_field_name, (char*)pgm_read_word(&(prefetch_data_fields[i])), 7);
     prefetch_field_name[7] = '\0';
 
-    if(strstr_P(prefetch_field_name, PSTR("ssid__"))){
+    if(strnstr_P(prefetch_field_name, PSTR("ssid__"),10)){
 //      //this->query_network_ssid();
       snprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len),
                   buffer_size_remaining,
@@ -552,7 +569,7 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
                   prefetch_field_name,
                   station.ssid);
       prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
-    } else if(strstr_P(prefetch_field_name, PSTR("conctd"))){
+    } else if(strnstr_P(prefetch_field_name, PSTR("conctd"),10)){
       if(this->is_network_connected()){
         strncpy_P( (prefetch_output_buffer+prefetch_output_buffer_len),
                     PSTR("conctd:true,"),
@@ -563,8 +580,8 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
                    buffer_size_remaining);
       }
       prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
-    }else if( (strstr_P(prefetch_field_name, PSTR("ipaddr")) ||
-              strstr_P(prefetch_field_name,  PSTR("macadr")))){
+    }else if( (strnstr_P(prefetch_field_name, PSTR("ipaddr"),10) ||
+              strnstr_P(prefetch_field_name,  PSTR("macadr"),10))){
       if(!have_queried_mac){
         //this->query_ip_and_mac();//todo: re-enable
         have_queried_mac = true; //only do one query to refresh IP and mac
@@ -577,7 +594,7 @@ void ESP8266::send_http_200_with_prefetch(unsigned char channel,
                     PSTR("macadr:\"%s\","),station.macaddr);
         prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
       }
-    }else if(strstr_P(prefetch_field_name, PSTR("port__"))){
+    }else if(strnstr_P(prefetch_field_name, PSTR("port__"),MAX_RESPONSE_LINE_LEN)){
       Serial.println(F("| writing port"));
       snprintf_P( (prefetch_output_buffer+prefetch_output_buffer_len), 
                  buffer_size_remaining,
@@ -618,7 +635,7 @@ void ESP8266::query_network_ssid(){
   while((millis() - start_time) < timeout_ms){
     if(this->read_line(input_buffer,MAX_RESPONSE_LINE_LEN)){
       // a line is found
-      if(strstr_P(input_buffer,PSTR("+CWJAP")) != NULL) {
+      if(strnstr_P(input_buffer,PSTR("+CWJAP"),MAX_RESPONSE_LINE_LEN) != NULL) {
           //Response is on this line, parse out the strings
           read_pointer = strtok(input_buffer,"\""); //up to the start of the SSID
           read_pointer = strtok(NULL,"\""); //the SSID field
@@ -669,13 +686,13 @@ void ESP8266::query_ip_and_mac(){
   while((millis() - start_time) < timeout_ms){
     if(this->read_line(input_buffer, MAX_RESPONSE_LINE_LEN)){
       // a line is found
-      if(strstr_P(input_buffer,PSTR("+CWJAP")) != NULL) {
-        if(strstr_P(input_buffer,PSTR("STAIP")) != NULL){
+      if(strnstr_P(input_buffer,PSTR("+CWJAP"),MAX_RESPONSE_LINE_LEN) != NULL) {
+        if(strnstr_P(input_buffer,PSTR("STAIP"),MAX_RESPONSE_LINE_LEN) != NULL){
           //IP Address is on this line, parse out the strings
           read_pointer = strtok(input_buffer,"\""); //up to the start of the IP Address
           read_pointer = strtok(NULL,"\""); //the SSID field
           strncpy(station.ip, read_pointer, IP_ADDRESS_LENGTH); //copy into my ip string
-        } else if(strstr_P(input_buffer,PSTR("STAMAC")) != NULL){
+        } else if(strnstr_P(input_buffer,PSTR("STAMAC"),MAX_RESPONSE_LINE_LEN) != NULL){
                     //Response is on this line, parse out the strings
           read_pointer = strtok(input_buffer,"\""); //up to the start of the SSID
           read_pointer = strtok(NULL,"\""); //the SSID field
@@ -799,14 +816,14 @@ void ESP8266::send_networks_list(unsigned char channel){
 
     //Read a line and queue it up to send
     read_line(response_line, 2000);
-    if(strstr_P(response_line,PSTR("+CWLAP")) != NULL){
+    if(strnstr_P(response_line,PSTR("+CWLAP"),MAX_RESPONSE_LINE_LEN) != NULL){
       response_started = true;
       snprintf_P(prefetch_output_buffer+buffer_index,
                  buffer_size_remaining,
                  PSTR("%s\n"),
                  response_line);
       prefetch_output_buffer_len = strnlen(prefetch_output_buffer,PREFETCH_OUTPUT_BUFFER_SIZE);
-    } else if(response_started && strstr_P(response_line,PSTR("OK"))){
+    } else if(response_started && strnstr_P(response_line,PSTR("OK"),MAX_RESPONSE_LINE_LEN)){
       send_http_200_static(channel,prefetch_output_buffer,prefetch_output_buffer_len);
     }
   }//while()
@@ -833,7 +850,7 @@ char ESP8266::get_channel_from_string(char line[], int len){
   char rv = 0;
 
   //Try to find the channel indicator
-  char * token = strstr_P(string_to_parse, PSTR("IPD,"));
+  char * token = strnstr_P(string_to_parse, PSTR("IPD,"),len);
 
   if(token != NULL){
     strtok(token,","); //this is "IPD"
@@ -867,10 +884,10 @@ void ESP8266::process_settings(unsigned char channel, char input_line[],int inpu
   char* read_pointer = NULL;
 
   // Read the remaining lines, until I find my parameter, or I time out:
-  if(strstr_P(input_line,PSTR("ssid__")) != NULL){
+  if(strnstr_P(input_line,PSTR("ssid__"),input_line_size) != NULL){
     Serial.println(F("| received an SSID setting request"));
     do{
-      if(strstr_P(input_line,PSTR("ssid__=")) != NULL){
+      if(strnstr_P(input_line,PSTR("ssid__="),input_line_size) != NULL){
         //found the setting string
         read_pointer = strtok(input_line,"="); //up to the start of the SSID
         read_pointer = strtok(NULL,"="); //the SSID field

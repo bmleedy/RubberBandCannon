@@ -118,6 +118,8 @@ struct server_info{
   unsigned char maxconns;  ///< The maximum number of connections the server will support
 };
 
+char *strnstr_P(char *haystack, PGM_P needle, size_t haystack_length);
+
 /*!
  * @class ESP8266
  *
