@@ -42,8 +42,7 @@ bool CircularBuffer::buf_put(char data){
   buf[head] = data;
   head = (head + 1) % buf_size;
 
-  if(head == tail)
-  {
+  if(head == tail){
       tail = (tail + 1) % buf_size;
       rv = false;
   }

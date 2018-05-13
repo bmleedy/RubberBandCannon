@@ -29,7 +29,7 @@
 #include <EEPROM.h>
 
 // Devug definition
-#define PRINT_SERIAL_STREAM false ///<If set, all data to and from the ESP8266 is dumped to the debug serial port.
+#define PRINT_SERIAL_STREAM true ///<If set, all data to and from the ESP8266 is dumped to the debug serial port.
 
 #if PRINT_SERIAL_STREAM
 #define PRINTSTR_IF_VERBOSE(x){Serial.print(F(x));}
@@ -92,6 +92,8 @@
  *  Webserver will allow only up to this many incoming connections at once*/
 #define DEFAULT_MAXCONNS 1
 
+#define INITIALIZED_LETTER 'z'
+
 //! @todo put config page values in eeprom (instead of just loading defaults at start).
 
 /*! 
@@ -150,6 +152,7 @@ private:
     char prefetch_output_buffer[PREFETCH_OUTPUT_BUFFER_SIZE];
     unsigned int prefetch_output_buffer_len;
     network_info station;
+    network_info ap;
     server_info server;
     void query_network_ssid();
     void query_ip_and_mac();
@@ -170,6 +173,7 @@ public:
     void clear_buffer();
     void purge_serial_input(unsigned int timeout);
     bool set_station_ssid_and_passwd(char new_ssid_and_passwd[]);
+    bool set_ap_ssid_and_passwd(char new_ssid_and_passwd[]);
     char get_channel_from_string(char line[], int len);
     void process_settings(unsigned char channel, char input_line[], int input_line_size);
     

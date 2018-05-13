@@ -52,13 +52,14 @@ char *strnstr_P(char *haystack, PGM_P needle, size_t haystack_length)
  *                        The EEPROM memory block we use looks
  *                        [char initialized][network_info network_info]
  *                         ^eeprom_address   ^eeprom_address + 1
- *                        if "initialized" is set  not exactly equal to 'y', 
+ *                        if "initialized" is set  not exactly equal to INITIALIZED_LETTER, 
  *                           then we load the default settings and write them to
  *                           the EEPROM.
  * 
  * @return         This is a constructor.
  */
 ESP8266::ESP8266(AltSoftSerial *port, bool verbose, int eeprom_address){
+  int eeprom_position = 0;
   this->port = port;  //serial port
   serial_input_buffer = new CircularBuffer(SERIAL_INPUT_BUFFER_MAX_SIZE);
   this->verbose = verbose;
@@ -66,20 +67,28 @@ ESP8266::ESP8266(AltSoftSerial *port, bool verbose, int eeprom_address){
 
   this->eeprom_address=eeprom_address;
 
-  if(EEPROM.read(eeprom_address) != 'y'){
+  if(EEPROM.read(eeprom_address) != INITIALIZED_LETTER){
     Serial.println(F("| ESP8266: Network settings not initialized - loading defaults"));
     // Set my own values to the defaults
     strcpy_P(station.ssid,PSTR("leedy"));         //default SSID
     strcpy_P(station.password,PSTR("teamgoat"));  //default password
     strcpy_P(station.macaddr, PSTR("dc:4f:22:11:e9:64"));
     strcpy_P(station.ip, PSTR("192.168.1.25"));
+
+    strcpy_P(ap.ssid,PSTR("cannon_ap"));         //default SSID
+    strcpy_P(ap.password,PSTR("cannon_pass_!@#$"));  //default password
+    strcpy_P(ap.macaddr, PSTR("11:22:33:44:55:66"));
+    strcpy_P(ap.ip, PSTR("192.168.4.1"));
     // Save these settings to EEPROM
     update_eeprom();
 
   } else{
-    //Read my settings from EEPROM, starting after the 'y'
+    //Read my settings from EEPROM, starting after the INITIALIZED_LETTER
+    eeprom_position++;
     PRINTSTRLN_IF_VERBOSE("| Reading Settings from EEPROM.");
-    EEPROM.get( (this->eeprom_address+1),this->station);
+    EEPROM.get( (this->eeprom_address+eeprom_position),this->station);
+    eeprom_position += sizeof(this->station);
+    EEPROM.get( (this->eeprom_address+eeprom_position),this->ap);
   }
   this->server.port = DEFAULT_PORT;
   this->server.maxconns = DEFAULT_MAXCONNS;
@@ -89,9 +98,13 @@ ESP8266::ESP8266(AltSoftSerial *port, bool verbose, int eeprom_address){
 
 
 void ESP8266::update_eeprom(){
+  int eeprom_location=0;
   PRINTSTRLN_IF_VERBOSE("| ESP8266: Updating EEPROM");
-  EEPROM.put(this->eeprom_address, 'y');
-  EEPROM.put((this->eeprom_address+1), station);
+  EEPROM.put(this->eeprom_address, INITIALIZED_LETTER);
+  eeprom_location++;
+  EEPROM.put((this->eeprom_address+eeprom_location), station);
+  eeprom_location += sizeof(station);
+  EEPROM.put((this->eeprom_address+eeprom_location), ap);
 }
 
 /*!
@@ -271,7 +284,7 @@ bool ESP8266::setup_device(){
     // configure the cannon AP
     Serial.print(F("| ESP8266 - configuring my own access point..."));
     strncpy_P(request_buffer,PSTR("AT+CWSAP_DEF?\r\n"), COMMAND_BUFFER_SIZE);
-    snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("+CWSAP_DEF:\"cannon_ap\",\"%s\",1,3"),"cannon_pass_!@#$");
+    snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("+CWSAP_DEF:\"%s\",\"%s\",1,3"),ap.ssid,ap.password);
     while(true){
       purge_serial_input(setup_stage_delay);
       if(expect_response_to_command(request_buffer,
@@ -281,7 +294,7 @@ bool ESP8266::setup_device(){
           break;
       } else {
         Serial.print (F("\n| ESP8266 -     Access point not set up.  Setting up now..."));
-        snprintf_P(request_buffer,COMMAND_BUFFER_SIZE,PSTR("AT+CWSAP_DEF=\"cannon_ap\",\"%s\",1,3,4,0\r\n"),"cannon_pass_!@#$");
+        snprintf_P(request_buffer,COMMAND_BUFFER_SIZE,PSTR("AT+CWSAP_DEF=\"%s\",\"%s\",1,3,4,0\r\n"),ap.ssid,ap.password);
         strncpy_P(response_buffer,PSTR("OK"),COMMAND_BUFFER_SIZE);
         if(expect_response_to_command(request_buffer,
                                       strnlen(request_buffer,COMMAND_BUFFER_SIZE),
@@ -301,7 +314,7 @@ bool ESP8266::setup_device(){
     // configure the cannon AP
     Serial.print(F("| ESP8266 - configuring my ip address on cannon_ap network to 192.168.4.1..."));
     strncpy_P(request_buffer,PSTR("AT+CIPAP_DEF?\r\n"), COMMAND_BUFFER_SIZE);
-    snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("+CIPAP_DEF:ip:\"192.168.4.1\""),"192.168.4.1","192.168.4.1");
+    snprintf_P(response_buffer,COMMAND_BUFFER_SIZE,PSTR("+CIPAP_DEF:ip:\"%s\""),ap.ip);
     while(true){
       purge_serial_input(setup_stage_delay);
       if(expect_response_to_command(request_buffer,
@@ -311,7 +324,7 @@ bool ESP8266::setup_device(){
           break;
       } else {
         Serial.print (F("\n| ESP8266 -  ip address on cannon_ap not set up.  Setting up now..."));
-        snprintf_P(request_buffer,COMMAND_BUFFER_SIZE,PSTR("AT+CIPAP_DEF=\"%s\",\"%s\",\"255.255.255.0\"\r\n"),"192.168.4.1","192.168.4.1");
+        snprintf_P(request_buffer,COMMAND_BUFFER_SIZE,PSTR("AT+CIPAP_DEF=\"%s\",\"%s\",\"255.255.255.0\"\r\n"),ap.ip,ap.ip);
         strncpy_P(response_buffer,PSTR("OK"),COMMAND_BUFFER_SIZE);
         if(expect_response_to_command(request_buffer,
                                       strnlen(request_buffer,COMMAND_BUFFER_SIZE),
@@ -779,6 +792,45 @@ bool ESP8266::set_station_ssid_and_passwd(char new_ssid_and_passwd[]){
   return false; //we timed out and did not succeed.
 }
 
+bool ESP8266::set_ap_ssid_and_passwd(char new_ssid_and_passwd[]){
+
+  char command_to_send[(MAX_SSID_LENGTH+MAX_PASSWORD_LENGTH+18)];
+  char desired_response[] = "OK";
+  unsigned int max_attempts = 3;
+
+  // configure the cannon AP
+  Serial.print(F("| ESP8266 - Setting new access point ssid and password..."));
+  
+  snprintf_P(command_to_send,
+             (MAX_SSID_LENGTH+MAX_PASSWORD_LENGTH+18),
+             PSTR("AT+CWSAP_DEF=%s,1,3\r\n"),
+             new_ssid_and_passwd);
+
+
+  for(unsigned int i=0; i<max_attempts; i++){
+    if(expect_response_to_command(command_to_send, 
+                                  strlen(command_to_send),
+                                  desired_response,10000)){
+      //update my class variables
+      char* read_pointer = strtok(new_ssid_and_passwd,",\"");
+      strncpy(this->ap.ssid,read_pointer,MAX_PASSWORD_LENGTH+1);
+      read_pointer = strtok(NULL,",\"");
+      strncpy(this->ap.password,read_pointer,MAX_SSID_LENGTH+1);
+
+      //Store the new settings in eeprom
+      update_eeprom();
+      
+      //return success
+      return true;
+    }else{
+      Serial.print(F("| Attempt "));Serial.print(i,DEC);Serial.println(F(" to set AP SSID failed."));
+    }
+  }
+
+  return false; //we timed out and did not succeed.
+  
+}
+
 
 
 
@@ -884,7 +936,8 @@ void ESP8266::process_settings(unsigned char channel, char input_line[],int inpu
   char* read_pointer = NULL;
 
   // Read the remaining lines, until I find my parameter, or I time out:
-  if(strnstr_P(input_line,PSTR("ssid__"),input_line_size) != NULL){
+  if((strnstr_P(input_line,PSTR("ssid__"),input_line_size) != NULL) ||
+     (strnstr_P(input_line,PSTR("ap_ssd"),input_line_size) != NULL)){
     Serial.println(F("| received an SSID setting request"));
     do{
       if(strnstr_P(input_line,PSTR("ssid__="),input_line_size) != NULL){
@@ -895,6 +948,16 @@ void ESP8266::process_settings(unsigned char channel, char input_line[],int inpu
         if(set_station_ssid_and_passwd(read_pointer)){
           //No point in sending a response - SSID change will break the connection.
           Serial.println(F("| Set Station SSID succeeded!"));
+          break;
+        }
+      } else if(strnstr_P(input_line,PSTR("ap_ssd="),input_line_size) != NULL){
+        //found the setting string
+        read_pointer = strtok(input_line,"="); //up to the start of the SSID
+        read_pointer = strtok(NULL,"="); //the SSID field
+        read_pointer = strtok(read_pointer,"\n"); //trimming the trailing newline
+        if(set_ap_ssid_and_passwd(read_pointer)){
+          //No point in sending a response - SSID change will break the connection.
+          Serial.println(F("| Set Access Point SSID succeeded!"));
           break;
         } else {
           send_http_200_static(channel,(char *)failure_msg,(sizeof(failure_msg)-1));

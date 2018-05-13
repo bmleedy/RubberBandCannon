@@ -16,18 +16,25 @@
       IP:<span class="ipaddr"></span><br>
       MAC:<span class="macadr"></span><br>
       Port:<span class="port__"></span><br>
+      AP SSID:<span class="ap_ssd"></span><br>
     
-    <h1>WiFi Setup</h1>
+    <h1>Home WiFi Setup</h1>
       <strong>SSID</strong>:<input class="ssid__" id="ssid__" type="text" size="15"></input>
       <br>
-      <strong>Password</strong>:<input class="paswrd" id="paswrd" type="password" size="15"></input>
-                                <input type="button" onclick="setpwd()" value="Submit"></input>
+      <strong>Password</strong>:<input id="paswrd" type="password" size="15"></input>
+                                <input type="button" onclick="setpwd('ssid__','paswrd')" value="Submit"></input>
+    <h1>WiFi Access Point Setup</h1>
+      <strong>AP SSID</strong>:<input class="ap_ssd" id="ap_ssd" type="text" size="15"></input>
+      <br>
+      <strong>AP Password</strong>:<input id="ap_pwd" type="password" size="15"></input>
+                                   <input type="button" onclick="setpwd('ap_ssd','ap_pwd')" value="Submit"></input>
   </body>
   <footer>
     <script language="javascript">
       var pf_data={
 //FETCHDATA_START
 //      all data between the quad_slashes and "//END" will be replaced with a callback to fill the output queue with prefetch data.
+                           ap_ssd:"cannon_ap",
                            ssid__:"leedy",
                            conctd:true,
                            ipaddr:"192.168.1.25",
@@ -50,12 +57,12 @@
       k=Object.keys(pf_data);
       for(var i=0;i<k.length;i++)
         pftch(k[i],pf_data[k[i]]); 
-      function setpwd(){
+      function setpwd(id1,id2){
         var http = new XMLHttpRequest(),
-        pwd=document.getElementById("paswrd").value,
-        sid=document.getElementById("ssid__").value;
-        var params='ssid__="'+sid+'","'+pwd+'"\n';
-        http.open("POST","settings/ssid__",true);
+        pwd=document.getElementById(id2).value,
+        sid=document.getElementById(id1).value;
+        var params=id1+'="'+sid+'","'+pwd+'"\n';
+        http.open("POST","settings/"+id1,true);
         if(pwd && sid){
           http.send(params);
           http.onload=function(){
