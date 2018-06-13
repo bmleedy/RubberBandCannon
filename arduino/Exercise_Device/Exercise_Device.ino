@@ -21,27 +21,34 @@ void setup() {
 void loop() {
 
   for(int i=0;i<5;i++){
+    Serial.println(F("Turn Up..."));
     shooter->turn_up();
     delay(500);
   }
 
   shooter->fire();
+  Serial.println(F("Fire!"));
 
   for(int i=0;i<5;i++){
+    Serial.println(F("Turn Down..."));
     shooter->turn_down();
     delay(500);
   }
 
+  Serial.println(F("Fire!"));
   shooter->fire();
 
   for(int i=0;i<5;i++){
+    Serial.println(F("Turn Left..."));
     shooter->turn_left();
     delay(500);
   }
 
+  Serial.println(F("Fire!"));
   shooter->fire();
 
   for(int i=0;i<5;i++){
+    Serial.println(F("Turn Right..."));
     shooter->turn_right();
     delay(500);
   }
